@@ -1,0 +1,61 @@
+📘 AI Policy Simulation Game – ReadMe.txt
+
+🎯 GOAL OF THE GAME
+You are the policy leader of one of four countries: Japan, Korea, Taiwan, or Mongolia.
+Your mission is to:
+- Maximize your own AI paper output and notable AI model count — which one you value more is up to you.
+- AND/OR help your East Asian coalition collectively surpass China or the U.S.
+
+Choose: Dominate alone? Or win together? 
+
+🧩 HOW THE GAME WORKS
+
+Each round includes 5 phases:
+
+1. Parameter Declaration
+   - Adjust your hidden parameters (e.g., Education Investment, Semiconductor strength)
+   - Keep your total score under 100
+
+2. Cooperative Agreements
+   - Form alliances using cooperation parameters (e.g., Data Shared, Joint Project)
+   - You only have 30 points to spend — use them wisely
+   - Think Prisoner’s Dilemma: will your partners betray you? 
+If you and partner agree to share and both set Sharing_Tendency or willing_to_cooperate high both thrive. But you will be betrayed when they didn't set sharing values enough. 
+
+3. Event Triggers
+   - Each player picks 1 domestic event
+   - The game master picks 1 international events and 1 Game Theory(PD,SH,CG) events
+   - Events increase (or decrease!) AI models and paper points based on your parameters and alliances
+
+4. Results Update
+   - Your AI paper output is calculated using a formula based on hidden parameters
+   - AI model count is based on a Gaussian distribution (don’t worry — we do the math) using AI paper output as σ^2
+   - Event bonuses or penalties — along with your stance against the G2 — are applied.
+
+5. Strategic Revision Phase
+   - Reflect, regret, renegotiate
+   - The game continues to the next round...
+   
+ For more information read Rulebook.pptx.
+
+🛠 WHAT YOU CONTROL
+- 🔒 Hidden Parameters (like AI Investment Focus, Electricity Access)
+- 🤝 Cooperative Deals with other countries (share or deceive?)
+- 🗳 Domestic Event Choice — pick one every round
+
+🧠 WHAT TO THINK ABOUT
+- How can you boost your country's independent performance — maximizing output without relying on others?
+- Will you share compute and data... or use it by yourself?
+- Do you value short-term gains... or long-term influence?
+- Will you align with the U.S. or China... or build a third superpower?
+
+📝 TIPS
+- Maximize synergy between your hidden parameters and events
+- Watch your paper growth curve — it determines AI model potential
+- Not all cooperation is good — think about strategic timing
+- Expect betrayal. Reward trust. Manipulate wisely.
+
+📚 Reference:
+Initial states are based on data from the Stanford AI Index Report.
+
+
