@@ -10,9 +10,6 @@ from pathlib import Path
 import random
 import math
 
-from math import log
-from statistics import mean
-
 import streamlit as st
 from scipy.stats import norm
 
@@ -75,7 +72,10 @@ parameter_descriptions = {
     "Alignment_China": "Blue team? Red team?",
     "Willing_to_Cooperate": "Willingness to form agreements (Used in Cooperative parameters)",
     "Intelligence": "More info, better decision.",
-    "Supply_Chain_Diversity": "Flexibility and resilience of imports"
+    "Supply_Chain_Diversity": "Flexibility and resilience of imports",
+    "Labor": "Relative poulation",
+    "Natural_Resource_Reserves": "How much resource you have within your country",
+    "GDP": "Gross Domestic Product"
 }
 
 coop_params = {
@@ -206,7 +206,7 @@ domestic_events = {
     19: {
         "title": "Tech Labor Strike",
         "description": "Domestic chip plant or AI infra engineers go on strike over wages.",
-        "delta_models": "round( -2 * (1 - np.mean([Labor * 10, AI_Investment_Focus]) / 10)*min(1, max(0, 1 - (Labor – 0.8)*10))*min(1,max(0, 1 - (AI_Investment_Focus - 7)/3)) )",
+        "delta_models": "round( -2 * (1 - np.mean([Labor * 10, AI_Investment_Focus]) / 10)*min(1, max(0, 1 - (Labor - 0.8)*10))*min(1,max(0, 1 - (AI_Investment_Focus - 7)/3)) )",
         "delta_papers": "round( -10 * (1 - (Semiconductor+ Electricity) / 20))"
     },
     20: {
@@ -243,7 +243,7 @@ domestic_events = {
         "title": "AI Fellowship Program Canceled",
         "description": "A national AI PhD/postdoc fellowship program is abruptly canceled due to budget cuts.",
         "delta_models": "round(-1 * (1 - Talent_Index / 10))",
-        "delta_papers": "Round(-10 * (1 - Education_Investment / 10))"
+        "delta_papers": "round(-10 * (1 - Education_Investment / 10))"
     },
     26: {
         "title": "National AI Research Grant Boost",
@@ -756,7 +756,9 @@ def evaluate_delta(expr: str, params: dict) -> int:
                 "sqrt": np.sqrt,
                 "np": np,
                 "mean": np.mean,
-                "log": log,
+                "log": math.log,
+                "exp": math.exp,
+                "abs": abs
             },
             safe_locals
         ))
@@ -897,8 +899,10 @@ if st.session_state.page == "hidden":
             for k, v in hidden_params.items():
                 st.session_state[f"hidden_params_{k}"] = v
             
+            full_hidden_params = {**hidden_params, **fixed_values[team]}
+            
             with open(shared_dir / f"hidden_{team}.json", "w") as f:
-                json.dump(hidden_params, f)
+                json.dump(full_hidden_params, f)
 
             # paper growth 저장
             st.session_state["growth_rate"] = growth
@@ -1459,7 +1463,7 @@ Interpret it wisely, and your nation could outmaneuver its competitors in both g
             st.markdown(f"**Intel 4️⃣**\n{st.session_state['intel_result_step4']}")
 
 elif st.session_state.page == "summary":
-    st.title("📊 AI Model & Paper Summary Phase")
+    st.title("📊 AI Model & Paper Summary")
     st.markdown("""
 You’ve reached the moment of truth.
 
@@ -1476,6 +1480,7 @@ Let’s see how far you've come… and where you must go next.
 > <b>"Mission accomplished!"</b> (but the timer keeps ticking...)<br>
 > <i>— Ethan Hunt, <i>Mission: Impossible – Ghost Protocol</i> (2011)</i>
 """, unsafe_allow_html=True)
+    st.markdown("---")
     
     team = st.session_state["authenticated_team"]
 
@@ -1551,21 +1556,29 @@ Let’s see how far you've come… and where you must go next.
     st.session_state["China_models"] = int(round(calculate_ai_models(st.session_state["China_papers"])))
 
     # 9. Display Player Summary
-    st.subheader(f"📄 Papers Produced: {int(st.session_state['paper_count'])}")
-    st.subheader(f"🤖 Models Developed: {int(st.session_state['model_count'])}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader(f"⚛ Papers Produced: {int(st.session_state['paper_count'])}")
+    with col2:
+        st.subheader(f"🪄 Models Developed: {int(st.session_state['model_count'])}")
 
-    st.markdown("### 🧺 Breakdown")
-    st.markdown(f"""
-    - Paper Growth This Round: {paper_growth_this_round}
-    - Domestic Event Papers: {delta_paper_domestic}
-    - International Event Papers: {delta_paper_international}
-
-    - Domestic Event Models: {delta_model_domestic}
-    - International Event Models: {delta_model_international}
-    """)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        **📄 Paper Growth**
+        - This Round: {paper_growth_this_round}  
+        - Domestic Event: {delta_paper_domestic}  
+        - International Event: {delta_paper_international}  
+        """)
+    with col2:
+        st.markdown(f"""
+        **🤖 Model Growth**
+        - Domestic Event: {delta_model_domestic}  
+        - International Event: {delta_model_international}  
+        """)
 
     # 10. Display US & China Summary
-    st.markdown("## 🌍 Benchmark Countries (US & China)")
+    st.markdown("## Benchmark Countries (US & China)")
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### 🇺🇸 United States")
@@ -1586,5 +1599,4 @@ Let’s see how far you've come… and where you must go next.
 
 
     # ToDo: implement comparison table or results
-
 
