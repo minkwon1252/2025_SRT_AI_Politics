@@ -3,9 +3,9 @@
 Welcome back,this is the 2025 SRT AI Session.
 
 <div class='big-caption'>
-    <span class='important-line'>Your primary mission:<br></span> Secure your country’s success in AI development.
+    <span class='important-line'>**Your primary mission:**<br></span> Secure your country’s success in AI development.
     <br>
-    <span class='important-line'>Your secondary mission:<br></span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation (Sum of SRT &gt; US or China).
+    <span class='important-line'>**Your secondary mission:**<br></span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation (Sum of SRT &gt; US or China).
     <br><br>
     You can choose to <b>cooperate, compete, or remain neutral</b> toward other nations.
     <hr>
