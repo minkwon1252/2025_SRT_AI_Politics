@@ -1,12 +1,11 @@
-<p align="center">
-  🏛️ <span>SRT - AI Session Politics</span>
-</p>
-
-Welcome back, this is the 2025 SRT AI Session. In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations. 
 
 <p align="center">
   <img src="images/logo-stem.webp" width="200">
 </p>
+
+# 🏛️ SRT - AI Session Politics
+
+Welcome back, this is the 2025 SRT AI Session. In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations. 
 
 <div class='big-caption'>
     <span class='important-line'><b>Your primary mission:</b><br></span> Secure your country’s success in AI development.
