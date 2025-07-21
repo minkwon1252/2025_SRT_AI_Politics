@@ -2,23 +2,10 @@
 
 Welcome back,this is the 2025 SRT AI Session.
 
-<style>
-.big-caption {
-    font-size: 17px !important;
-    color: black !important;
-    line-height: 1.6;
-    margin-bottom: 1em;
-}
-.important-line {
-    font-weight: bold;
-    font-size: 18px;
-    margin-top: 1em;
-}
-</style>
 <div class='big-caption'>
-    <span class='important-line'>Your primary mission:</span> Secure your country’s success in AI development.
+    <span class='important-line'>Your primary mission:<br></span> Secure your country’s success in AI development.
     <br>
-    <span class='important-line'>Your secondary mission:</span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation (Sum of SRT &gt; US or China).
+    <span class='important-line'>Your secondary mission:<br></span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation (Sum of SRT &gt; US or China).
     <br><br>
     You can choose to <b>cooperate, compete, or remain neutral</b> toward other nations.
     <hr>
