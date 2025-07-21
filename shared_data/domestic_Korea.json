@@ -1,1 +1,0 @@
-{"title": "AI-Phobia Media Coverage Surge", "description": "A media narrative fuels public fear around AI, reducing institutional support.", "delta_models": "0", "delta_papers": "-16 * (1 if AI_Literacy_Education + Democratic_Stability_Index < 18 else 0.25)"}
