@@ -31,4 +31,6 @@ Welcome back,this is the 2025 SRT AI Session.
         <li><b>Summary Phase</b><br> Review AI model and paper growth, and see global standings at the end of each round.</li>
     </ul>
 </div>
-"""
+
+
+If you’re still confused, just play one round — you’ll get the idea.
