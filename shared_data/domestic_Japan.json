@@ -1,0 +1,1 @@
+{"title": "University-Industry AI Consortium Formed", "description": "Companies and universities co-develop next-gen AI systems.", "delta_models": "round(2.5 * (Talent_Index + Open_Source_Adoption) / 20)", "delta_papers": "round(9 * (Education_Investment + AI_Investment_Focus) / 20)"}

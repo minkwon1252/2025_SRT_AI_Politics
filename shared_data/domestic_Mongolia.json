@@ -1,0 +1,1 @@
+{"title": "National Dataset Consortium Formed", "description": "A public-private partnership builds high-quality AI datasets.", "delta_models": "round(2.0 * (Open_Source_Adoption + AI_Investment_Focus) / 20)", "delta_papers": "round(8 * log(1 + Talent_Index + Deployment_Infrastructure) / 4)"}

@@ -1,0 +1,1 @@
+{"title": "National AI Ethics Curriculum for Lawmakers", "description": "Policy leaders are educated in AI implications and responsible innovation.", "delta_models": "round(1.2 * (Democratic_Stability_Index + IP_Protection_Strength) / 20)", "delta_papers": "round(6 * (AI_Literacy_Education + Education_Investment) / 20)"}
