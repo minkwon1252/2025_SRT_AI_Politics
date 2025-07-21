@@ -5,7 +5,7 @@
 Welcome back, this is the 2025 SRT AI Session. In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations. 
 
 <p align="center">
-  <img src="images/logo.png" width="200">
+  <img src="images/logo-stem.webp" width="200">
 </p>
 
 <div class='big-caption'>
