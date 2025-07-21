@@ -1,6 +1,8 @@
-🏛️ SRT - AI Session Politics
+<p align="center">
+  <h1>🏛️ SRT - AI Session Politics</h1>
+</p>
 
-Welcome back,this is the 2025 SRT AI Session.
+Welcome back, this is the 2025 SRT AI Session.
 
 <div class='big-caption'>
     <span class='important-line'><b>Your primary mission:</b><br></span> Secure your country’s success in AI development.
@@ -8,6 +10,9 @@ Welcome back,this is the 2025 SRT AI Session.
     <span class='important-line'><b>Your secondary mission:</b><br></span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation. <br>(Sum of SRT &gt; US or China.)
     <br><br>
     You can choose to <b>cooperate, compete, betray, or remain neutral</b> toward other nations.
+    <p align="center">
+      <img src="images/logo.png" width="200">
+    </p>
     <hr>
     <span class='important-line'>Key phases and concepts:</span>
     <ul>
