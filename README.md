@@ -5,14 +5,14 @@
 
 # 🏛️ SRT - AI Session Politics
 
-&nbsp;&nbsp;&nbsp;<b>Welcome back, this is the 2025 SRT AI Session.</b> 
+&nbsp;&nbsp;&nbsp;Welcome back, this is the <b>2025 SRT AI Session.</b> 
 <br><br>
 &nbsp;&nbsp;&nbsp;In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations. 
 
 <div class='big-caption'>
-    <span class='important-line'><b>Your primary mission:</b><br></span> Secure your country’s success in AI development.
+    <span class='important-line'><b>Your primary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Secure your country’s success in AI development.
     <br><br>
-    <span class='important-line'><b>Your secondary mission:</b><br></span> Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation. <br>(Sum of SRT &gt; US or China.)
+    <span class='important-line'><b>Your secondary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation. <br>(Sum of SRT &gt; US or China.)
     <br><br>
     You can choose to <b>cooperate, compete, betray, or remain neutral</b> toward other nations.
     <hr>
