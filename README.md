@@ -41,3 +41,5 @@
 
 
 If you’re still confused, just play one round — you’ll get the idea.
+<br><br>
+https://2025srtaipolitics-k6wf8gh2hbhgy5udlr6p8h.streamlit.app
