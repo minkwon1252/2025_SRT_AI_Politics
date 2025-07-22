@@ -294,3 +294,48 @@ try:
         st.write(event['description'])
 except FileNotFoundError:
     st.warning("International events file not found for this round.")
+
+
+# --- 라운드 종료 및 다음 라운드 시작 버튼 ---
+st.markdown("---")
+
+# 현재 라운드 기록을 저장하는 버튼
+if st.button("End Round and Save History"):
+    utils.save_history(new_round_to_save)
+    st.success(f"Round {current_round_num} has been successfully recorded. Proceed to the next round.")
+    #st.balloons()
+
+# 다음 라운드를 시작하는 버튼
+if st.button("🚀 Start Next Round"):
+    # 1. 이번 라운드에서 생성된 공유 파일들을 삭제하여 초기화합니다.
+    st.toast("Clearing data for the new round...")
+    
+    # 국제 이벤트 파일 삭제
+    international_event_file = config.shared_dir / "international.json"
+    if international_event_file.exists():
+        international_event_file.unlink()
+
+    # 모든 플레이어의 국내 이벤트 및 협력 파일 삭제
+    for country_name in config.team_credentials.keys():
+        domestic_file = config.shared_dir / f"domestic_{country_name}.json"
+        if domestic_file.exists():
+            domestic_file.unlink()
+
+        coop_file = config.shared_dir / f"cooperation_{country_name}.json"
+        if coop_file.exists():
+            coop_file.unlink()
+            
+    # 2. 라운드별로 초기화가 필요한 session_state 변수들을 삭제합니다.
+    keys_to_clear = [
+        "rolling", "event_result", "event_shown", "intel_shown",
+        "adjustment_confirmed", "international_events", "cooperation_state",
+        "intel_step1_result_value", "intel_result_step2", "intel_result_step3", "intel_result_step4",
+        "intel_shown_step2", "intel_shown_step3", "intel_shown_step4"
+    ]
+    for key in keys_to_clear:
+        if key in st.session_state:
+            del st.session_state[key]
+            
+    # 3. Policy 페이지로 이동하여 새 라운드를 시작합니다.
+    st.success("Starting new round... Navigating to Policy Phase!")
+    st.switch_page("pages/2_Policy.py")
