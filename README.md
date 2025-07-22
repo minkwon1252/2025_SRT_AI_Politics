@@ -12,7 +12,7 @@
 <div class='big-caption'>
     <span class='important-line'><b>Your primary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Secure your country’s success in AI development.
     <br><br>
-    <span class='important-line'><b>Your secondary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation. <br>(Sum of SRT &gt; US or China.)
+    <span class='important-line'><b>Your secondary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Since this is SRT AI Politics, aim to surpass the US and China in AI model development by cooperation. <br> &nbsp;&nbsp;&nbsp;(Sum of SRT &gt; US or China.)
     <br><br>
     You can choose to <b>cooperate, compete, betray, or remain neutral</b> toward other nations.
     <hr>
