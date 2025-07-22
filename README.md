@@ -7,7 +7,10 @@
 
 &nbsp;&nbsp;&nbsp;Welcome back, this is the 2025 SRT AI Session. 
 <br><br>
-&nbsp;&nbsp;&nbsp;In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations. 
+&nbsp;&nbsp;&nbsp;In this session, you will play a game to understand the complex AI industry, where countless factors interact, and how, in reality, fields like engineering and diplomacy are mobilized to overcome challenges — helping you grasp the intricate dynamics of today’s global AI industry and international negotiations.
+
+<br><br>
+https://2025srtaipolitics-k6wf8gh2hbhgy5udlr6p8h.streamlit.app
 
 <div class='big-caption'>
     <span class='important-line'><b>Your primary mission:</b><br></span> &nbsp;&nbsp;&nbsp; Secure your country’s success in AI development.
@@ -41,5 +44,4 @@
 
 
 If you’re still confused, just play one round — you’ll get the idea.
-<br><br>
-https://2025srtaipolitics-k6wf8gh2hbhgy5udlr6p8h.streamlit.app
+
