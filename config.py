@@ -16,7 +16,9 @@ country_flags = {
     "Japan": "🇯🇵",
     "Korea": "🇰🇷",
     "Taiwan": "🇹🇼",
-    "Mongolia": "🇲🇳"
+    "Mongolia": "🇲🇳",
+    "United States": "🇺🇸",
+    "China": "🇨🇳"
 }
 
 fixed_values = {
@@ -694,7 +696,7 @@ initial_data = {
         "Japan": {"papers": 200, "models": 0},
         "Mongolia": {"papers": 1, "models": 0},
         "Taiwan": {"papers": 50, "models": 0},
-        "US": {"papers": 3200, "models": 40},
+        "United States": {"papers": 3200, "models": 40},
         "China": {"papers": 2000, "models": 15}
     }
 
