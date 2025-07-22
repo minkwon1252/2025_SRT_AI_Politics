@@ -16,8 +16,18 @@ team = st.session_state["authenticated_team"]
 
 st.title("📊 AI Model & Paper Summary")
 st.markdown("""
-You’ve reached the moment of truth. ...
-(이하 설명 동일)
+Now it’s time to see how your nation’s choices — across AI investments, cooperative actions, and strategic diplomacy — shaped your **model breakthroughs** and **paper production**.  
+Did international collaboration accelerate your growth, or did mistrust and misalignment slow you down?
+
+This is your chance to compare national outcomes and strategize how your country can grow faster, stronger, and smarter. Look carefully at the upcoming stats — and ask yourself:  
+**How will you catch up with the AI superpowers, the two giants — the US and China?**
+
+Identify which policies gave you a competitive edge — and which ones may need to be reinforced before the next round begins.
+
+Let’s see how far you've come… and where you must go next.
+
+> <b>"Mission accomplished!"</b> (but the timer keeps ticking...)<br>
+> <i>— Ethan Hunt, <i>Mission: Impossible – Ghost Protocol</i> (2011)</i>
 """, unsafe_allow_html=True)
 st.markdown("---")
 
