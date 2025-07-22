@@ -5,6 +5,7 @@ import math
 import random
 from scipy.stats import norm
 import config # config.py file
+import json
 
 u = 84.17
 threshold = 40 * u / 19
@@ -161,3 +162,75 @@ def get_coop_info(param, true_val, intel_score, options=None):
         pick = true_val if correct else ("No" if true_val == "Yes" else "Yes")
 
     return f"{param}: {pick}"
+
+# --- Summary Page Helper Functions ---
+
+def calculate_round_results(team_name, initial_papers, initial_models, growth_rate):
+    """한 팀의 라운드 결과를 계산하고, (최종 점수, 상세 변화량 딕셔너리) 튜플을 반환합니다."""
+    try:
+        # ... (파일 로드 부분은 이전과 동일)
+        with open(config.shared_dir / f"hidden_{team_name}.json") as f:
+            hidden_params = json.load(f)
+        with open(config.shared_dir / f"cooperation_{team_name}.json") as f:
+            coop_params_raw = json.load(f)
+        with open(config.shared_dir / f"domestic_{team_name}.json") as f:
+            domestic_event = json.load(f)
+        with open(config.shared_dir / "international.json") as f:
+            international_events = json.load(f)
+
+    except FileNotFoundError:
+        return (initial_papers, initial_models), {} # 파일 없으면 빈 딕셔너리 반환
+
+    # 상세 변화량 계산
+    delta_paper_domestic = evaluate_delta(domestic_event["delta_papers"], hidden_params)
+    delta_model_domestic = evaluate_delta(domestic_event["delta_models"], hidden_params)
+    
+    delta_paper_international = sum(
+        evaluate_event_international(e["delta_papers"], hidden_params, coop_params_raw)
+        for e in international_events
+    )
+    delta_model_international = sum(
+        evaluate_event_international(e["delta_models"], hidden_params, coop_params_raw)
+        for e in international_events
+    )
+
+    paper_growth_this_round = growth_rate
+    
+    # 모델 계산
+    total_paper_delta = paper_growth_this_round + delta_paper_domestic + delta_paper_international
+    final_papers = initial_papers + total_paper_delta
+    
+    new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
+    final_models = initial_models + delta_model_domestic + delta_model_international + new_models_from_papers
+    
+    # 상세 내역을 딕셔너리로 반환
+    delta_details = {
+        'base_growth': paper_growth_this_round,
+        'domestic_paper': delta_paper_domestic,
+        'international_paper': delta_paper_international,
+        'total_paper_delta': total_paper_delta,
+        'from_papers_model': new_models_from_papers,
+        'domestic_model': delta_model_domestic,
+        'international_model': delta_model_international,
+        'total_model_delta': delta_model_domestic + delta_model_international + new_models_from_papers
+    }
+    
+    return (final_papers, final_models), delta_details
+
+def load_history():
+    """history.json 파일에서 모든 라운드 기록을 로드합니다."""
+    history_file = config.shared_dir / "history.json"
+    if history_file.exists():
+        with open(history_file, "r") as f:
+            return json.load(f)
+    return []
+
+def save_history(new_round_data):
+    """기존 기록에 현재 라운드 데이터를 추가하여 저장합니다."""
+    history = load_history()
+    # 같은 라운드 번호가 이미 있는지 확인하여 중복 저장을 방지
+    if not any(d['round'] == new_round_data['round'] for d in history):
+        history.append(new_round_data)
+        history_file = config.shared_dir / "history.json"
+        with open(history_file, "w") as f:
+            json.dump(history, f, indent=4)
