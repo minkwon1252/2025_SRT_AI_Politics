@@ -6,6 +6,9 @@ import random
 from scipy.stats import norm
 import config # config.py file
 import json
+import pandas as pd
+import altair as alt
+import os
 
 u = 84.17
 threshold = 40 * u / 19
@@ -75,6 +78,7 @@ def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> in
 
 def category_to_multiplier(val, mapping):
     return mapping.get(str(val).strip(), 1.0)
+#---- AI Policy Phase ----
     
 def compute_growth_rate(params, fixed):
     try:
@@ -87,6 +91,89 @@ def compute_growth_rate(params, fixed):
         return round(4 * ((tech_term * human_term + cultural_term) * labor_term * nat * gdp))
     except:
         return None
+
+
+# 사용자의 compute_growth_rate 함수 (여기에 그대로 두거나 import)
+PARAMETER_TERM_MAP = {
+    "Semiconductor": "Technical",
+    "Electricity": "Technical",
+    "Open_Source_Adoption": "Technical",
+    "AI_Investment_Focus": "Technical",
+    "Talent_Index": "Human Resources",
+    "Education_Investment": "Human Resources",
+    "AI_Literacy_Education": "Socio-Cultural",
+    "Democratic_Stability_Index": "Socio-Cultural"
+}
+
+def compute_terms(params):
+    """
+    각 파라미터 그룹(항)의 값을 계산하여 딕셔너리로 반환합니다.
+    """
+    try:
+        tech_term = np.log(1 + 1.2 * params.get("Semiconductor", 0) + 0.8 * params.get("Electricity", 0) + params.get("Open_Source_Adoption", 0) + 1.5 * params.get("AI_Investment_Focus", 0)) ** 1.2
+        human_term = np.sqrt((params.get("Talent_Index", 0) + 1) * (params.get("Education_Investment", 0) + 1))
+        cultural_term = 1.5 * 10 * (np.tanh(0.2 * (params.get("AI_Literacy_Education", 0) + params.get("Democratic_Stability_Index", 0))) + 1)
+        
+        return {
+            "Technical": tech_term,
+            "Human Resources": human_term,
+            "Socio-Cultural": cultural_term
+        }
+    except (ValueError, TypeError):
+        return {"Technical": 0, "Human Resources": 0, "Socio-Cultural": 0}
+    
+def plot_parameter_impact(param_name, current_params, fixed_conditions):
+    """
+    특정 파라미터가 속한 '항(term)'의 값 변화를 그래프로 그립니다.
+    """
+    term_to_plot = PARAMETER_TERM_MAP.get(param_name)
+    
+    if not term_to_plot:
+        raise ValueError(f"'{param_name}'은 성장률 계산에 영향을 주지 않습니다.")
+
+    param_values = list(range(11))
+    term_output_values = []
+
+    for val in param_values:
+        temp_params = current_params.copy()
+        temp_params[param_name] = val
+        all_terms = compute_terms(temp_params)
+        term_value = all_terms[term_to_plot]
+        term_output_values.append(term_value)
+
+    current_value = current_params.get(param_name)
+    current_term_output = compute_terms(current_params)[term_to_plot]
+
+    df = pd.DataFrame({
+        'Parameter Value': param_values,
+        'Term Contribution': term_output_values
+    })
+
+    y_axis_title = f'{term_to_plot} Term Contribution'
+
+    line = alt.Chart(df).mark_line(point=True).encode(
+        x=alt.X('Parameter Value:Q', title=f'{param_name.replace("_", " ")} Level', scale=alt.Scale(domain=[0, 10])),
+        y=alt.Y('Term Contribution:Q', title=y_axis_title, scale=alt.Scale(zero=False)),
+        tooltip=['Parameter Value', alt.Tooltip('Term Contribution:Q', format='.2f')]
+    ).properties(
+        title=alt.TitleParams(
+            text=f'Impact of {param_name.replace("_", " ")} on {term_to_plot} Term',
+            anchor='middle'
+        )
+    )
+    
+    point = alt.Chart(pd.DataFrame({
+        'Parameter Value': [current_value],
+        'Term Contribution': [current_term_output]
+    })).mark_point(
+        color='red', size=100, filled=True, opacity=1
+    ).encode(
+        x='Parameter Value:Q',
+        y='Term Contribution:Q',
+        tooltip=['Parameter Value', alt.Tooltip('Term Contribution:Q', format='.2f')]
+    )
+
+    return line + point
         
 
 # --- Intelligence Phase ---
@@ -98,44 +185,55 @@ def intel_accuracy_prob(intelligence):
     return 0.4 * sigmoid(1.5 * (intelligence - 5)) + 0.5
 
 # ——— hidden parameter 범위 정보 생성 ———
-def get_hidden_param_info(param, true_val, intel_score):
-    acc = intel_accuracy_prob(intel_score)
-    correct = random.random() < acc
 
-    # Define margin based on intelligence score
-    if intel_score <= 0:
-        return f"{param}: 0~10"
-    elif intel_score <=2:
-        margin = random.choice([4, 2])
-    elif intel_score <= 5: 
-        margin = random.choice([3, 2])
-    elif intel_score <= 7:
-        margin = random.choice([3, 1])
-    elif intel_score <= 9:
-        margin = random.choice([2, 1])
+def get_hidden_param_info(param_name, true_val, intel_score):
+    if intel_score < 1:
+        return "Unknown (Intel Score too low)"
+
+    # --- Start Modification ---
+    # Ensure true_val is a number; if None or non-numeric, treat as 0 or handle as an error
+    if true_val is None:
+        # Option 1: Treat None as 0 for calculation purposes (most likely intended behavior)
+        true_val = 0 
+        st.warning(f"DEBUG: '{param_name}' had a None value, treated as 0 for calculation in intel.")
+    elif not isinstance(true_val, (int, float)):
+        # Option 2: If it's a string or other type, convert if possible or default to 0
+        try:
+            true_val = float(true_val) # Try converting to float
+            st.warning(f"DEBUG: '{param_name}' had non-numeric value '{true_val}', converted to float.")
+        except (ValueError, TypeError):
+            true_val = 0 # Fallback if conversion fails
+            st.error(f"ERROR: '{param_name}' had unconvertible non-numeric value '{true_val}', defaulted to 0.")
+    # --- End Modification ---
+
+    # Determine confidence level based on intel_score
+    if intel_score < 4:
+        confidence = "Low Confidence"
+        offset_range = 3 # Can be off by +/- 3
+    elif intel_score < 7:
+        confidence = "Medium Confidence"
+        offset_range = 2 # Can be off by +/- 2
+    else: # intel_score >= 7
+        confidence = "High Confidence"
+        offset_range = 1 # Can be off by +/- 1
+
+    # Generate a random offset within the range
+    offset = random.randint(0, offset_range)
+    direction = random.choice([-1, 1])
+
+    # Calculate fake value, ensuring it stays within 0-10 range
+    fake_val = (true_val + direction * offset) % 11
+    if fake_val < 0: # Ensure positive result from modulo for negative inputs
+        fake_val += 11
+
+    # Adjust fake_val to be within 0-10 range explicitly if % 11 resulted in more than 10
+    # or if the true value was very high/low and offset pushed it out
+    fake_val = max(0, min(10, int(round(fake_val)))) # Ensure it's an integer for display
+
+    if intel_score >= 10:
+        return f"{param_name}: {int(round(true_val))} (Exact, High Confidence)" # Ensure true_val is also integer for display
     else:
-        margin = random.choice([1, 0])
-
-    if correct:
-        # 🎯 비대칭 범위 (정확한 값 기준, 오른쪽이 조금 더 넓은 경향)
-        left = np.random.binomial(n=margin, p=0.3)
-        right = margin - left
-        low = max(0, true_val - left)
-        high = min(10, true_val + right)
-    else:
-        # ❌ 틀린 중심값: 70% 과대평가, 30% 과소평가
-        direction = 1 if random.random() < 0.7 else -1
-        offset = random.randint(margin + 1, margin + 2)
-        fake_val = (true_val + direction * offset) % 11
-
-        # 틀린 값에 대한 비대칭 범위 (우측이 넓은 경향)
-        fake_margin = random.randint(1, 2)
-        left = np.random.binomial(n=fake_margin, p=0.3)
-        right = fake_margin - left
-        low = max(0, fake_val - left)
-        high = min(10, fake_val + right)
-
-    return f"{param}: {low}" if low == high else f"{param}: {low}~{high}"
+        return f"{param_name}: {fake_val} (Approximate, {confidence})"
 
 
 # ——— cooperative parameter 정보 생성 ———
@@ -164,55 +262,69 @@ def get_coop_info(param, true_val, intel_score, options=None):
     return f"{param}: {pick}"
 
 # --- Summary Page Helper Functions ---
-
-def calculate_round_results(team_name, initial_papers, initial_models, growth_rate):
-    """한 팀의 라운드 결과를 계산하고, (최종 점수, 상세 변화량 딕셔너리) 튜플을 반환합니다."""
-    try:
-        # ... (파일 로드 부분은 이전과 동일)
-        with open(config.shared_dir / f"hidden_{team_name}.json") as f:
-            hidden_params = json.load(f)
-        with open(config.shared_dir / f"cooperation_{team_name}.json") as f:
-            coop_params_raw = json.load(f)
-        with open(config.shared_dir / f"domestic_{team_name}.json") as f:
-            domestic_event = json.load(f)
-        with open(config.shared_dir / "international.json") as f:
-            international_events = json.load(f)
-
-    except FileNotFoundError:
-        return (initial_papers, initial_models), {} # 파일 없으면 빈 딕셔너리 반환
-
-    # 상세 변화량 계산
-    delta_paper_domestic = evaluate_delta(domestic_event["delta_papers"], hidden_params)
-    delta_model_domestic = evaluate_delta(domestic_event["delta_models"], hidden_params)
+def calculate_round_results(team_name, initial_papers, initial_models, growth_rate, hidden_params, coop_params_raw):
+    """
+    한 팀의 라운드 결과를 계산합니다. (국내 이벤트만 고려)
+    """
+    delta_paper_domestic = 0
+    delta_model_domestic = 0
     
-    delta_paper_international = sum(
-        evaluate_event_international(e["delta_papers"], hidden_params, coop_params_raw)
-        for e in international_events
-    )
-    delta_model_international = sum(
-        evaluate_event_international(e["delta_models"], hidden_params, coop_params_raw)
-        for e in international_events
-    )
+    # === 국제 이벤트 영향은 0으로 고정 ===
+    delta_paper_international = 0
+    delta_model_international = 0
 
-    paper_growth_this_round = growth_rate
-    
-    # 모델 계산
-    total_paper_delta = paper_growth_this_round + delta_paper_domestic + delta_paper_international
+     # 이벤트 수식 평가를 위해 GDP 문자열을 숫자 값으로 변환
+    gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0} # 조건문에 사용할 숫자값 (조정 가능)
+    if "GDP" in hidden_params and isinstance(hidden_params["GDP"], str):
+        # hidden_params에 'GDP_value'라는 새로운 숫자 파라미터를 추가
+        hidden_params["GDP_value"] = gdp_map.get(hidden_params["GDP"], 0)
+
+    # 이벤트 수식 평가를 위해 Natural resource 문자열을 숫자 값으로 변환
+    nat_resource_map = {"Low": 0.5, "High": 1.0} # 조건문에 사용할 숫자값 (조정 가능)
+    if "Natural_Resource_Reserves" in hidden_params and isinstance(hidden_params["Natural_Resource_Reserves"], str):
+        hidden_params["Resource_value"] = gdp_map.get(hidden_params["Natural_Resource_Reserves"], 0)
+
+    # 국내 이벤트 처리
+    domestic_event_file_path = config.shared_dir / f"domestic_{team_name}.json"
+    if os.path.exists(domestic_event_file_path):
+        try:
+            with open(domestic_event_file_path, "r") as f:
+                all_domestic_events = json.load(f)
+                latest_domestic_event = {}
+                # 파일 내용이 리스트 또는 딕셔너리인 경우 모두 처리
+                if isinstance(all_domestic_events, list) and all_domestic_events:
+                    if isinstance(all_domestic_events[-1], dict):
+                        latest_domestic_event = all_domestic_events[-1]
+                elif isinstance(all_domestic_events, dict):
+                    latest_domestic_event = all_domestic_events
+            
+            # 국내 이벤트 delta 값 계산
+            delta_paper_domestic = evaluate_delta(latest_domestic_event.get("delta_papers", "0"), hidden_params)
+            delta_model_domestic = evaluate_delta(latest_domestic_event.get("delta_models", "0"), hidden_params)
+        except (json.JSONDecodeError, IndexError) as e:
+            st.warning(f"Could not process domestic event file for {team_name}: {e}")
+
+    # 최종 점수 계산
+    total_paper_delta = growth_rate + delta_paper_domestic + delta_paper_international # international은 0
     final_papers = initial_papers + total_paper_delta
-    
+    final_papers = max(0, final_papers)
+
     new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
-    final_models = initial_models + delta_model_domestic + delta_model_international + new_models_from_papers
     
-    # 상세 내역을 딕셔너리로 반환
+    total_model_delta = new_models_from_papers + delta_model_domestic + delta_model_international # international은 0
+    final_models = initial_models + total_model_delta
+    final_models = max(0.0, final_models)
+
+    # 상세 내역 딕셔너리
     delta_details = {
-        'base_growth': paper_growth_this_round,
+        'base_growth': growth_rate,
         'domestic_paper': delta_paper_domestic,
-        'international_paper': delta_paper_international,
+        'international_paper': delta_paper_international, # 값은 0이지만 키는 유지
         'total_paper_delta': total_paper_delta,
         'from_papers_model': new_models_from_papers,
         'domestic_model': delta_model_domestic,
-        'international_model': delta_model_international,
-        'total_model_delta': delta_model_domestic + delta_model_international + new_models_from_papers
+        'international_model': delta_model_international, # 값은 0이지만 키는 유지
+        'total_model_delta': total_model_delta
     }
     
     return (final_papers, final_models), delta_details
@@ -234,3 +346,4 @@ def save_history(new_round_data):
         history_file = config.shared_dir / "history.json"
         with open(history_file, "w") as f:
             json.dump(history, f, indent=4)
+
