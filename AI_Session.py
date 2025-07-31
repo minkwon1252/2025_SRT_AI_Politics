@@ -14,7 +14,7 @@ if "page" not in st.session_state:
     st.session_state.page = "login"
 
 if "authenticated_team" not in st.session_state:
-    st.switch_page("pages/1_Login.py")
+    st.switch_page("pages/0_Login.py")
 
 # 메인 페이지 콘텐츠
 st.title(f"🏛️ SRT - AI Session Politics")
