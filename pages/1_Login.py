@@ -1,4 +1,4 @@
-# pages/1_Login.py
+# pages/0_Login.py
 import streamlit as st
 from datetime import datetime
 import config
@@ -44,7 +44,7 @@ else:
             if config.team_credentials.get(team_name) == team_code:
                 st.session_state["authenticated_team"] = team_name
                 st.success("Login successful! Redirecting...")
-                st.switch_page("pages/2_Policy.py")
+                st.switch_page("pages/1_Circumstances.py")
             else:
                 st.error("Incorrect team code.")
 
