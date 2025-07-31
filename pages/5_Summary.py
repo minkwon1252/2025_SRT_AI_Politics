@@ -6,17 +6,21 @@ import pandas as pd
 import plotly.graph_objects as go
 import config
 import utils
+import os
+import time
+
 
 st.set_page_config(layout="centered", page_title="Round Summary")
 
-# --- 로그인 확인 ---
+# --- 0. 로그인 및 기본 설정 ---
 if not st.session_state.get("authenticated_team"):
     st.error("Please log in first.")
     if st.button("Go to Login"):
-        st.switch_page("pages/1_Login.py")
+        st.switch_page("pages/0_Login.py") # 사용자의 시작 페이지에 맞게 수정
     st.stop()
 
 my_team = st.session_state.get("authenticated_team")
+all_player_teams = list(config.team_credentials.keys())
 
 st.title("📊 Round Summary & Leaderboard")
 st.markdown("""
@@ -38,66 +42,79 @@ Let’s see how far you've come… and where you must go next.
 st.markdown("---")
 
 
-# --- 유일한 데이터 계산 로직 ---
+# --- 1. 데이터 로딩 및 결과 계산 ---
+# 모든 팀의 hidden, cooperation 파라미터를 한 번에 로드
+all_params = {}
+for team_name in all_player_teams:
+    hidden, coop = {}, {}
+    try:
+        with open(config.shared_dir / f"hidden_{team_name}.json", "r") as f:
+            hidden = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    try:
+        with open(config.shared_dir / f"cooperation_{team_name}.json", "r") as f:
+            coop = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    all_params[team_name] = {'hidden': hidden, 'coop': coop}
 
-# 1. 기록 및 초기 데이터 로드
+# 라운드 결과 계산
 history = utils.load_history()
 current_round_num = len(history) + 1
 st.header(f"🏁 End of Round {current_round_num}")
 
-if history:
-    initial_scores = history[-1]['scores']
-else:
-    initial_scores = {name: data for name, data in config.initial_data.items()}
+initial_scores = history[-1]['scores'] if history else config.initial_data
 
-# 2. 모든 국가의 현재 라운드 결과 계산
 all_results = {}
-for name in config.team_credentials.keys():
-    growth = st.session_state.get('growth_rate', 0) if name == my_team else 0
+for team_name in all_player_teams:
+    growth = st.session_state.get('growth_rate', 0) if team_name == my_team else 0
     (final_p, final_m), details = utils.calculate_round_results(
-        name,
-        initial_scores.get(name, {}).get('papers', 0),
-        initial_scores.get(name, {}).get('models', 0),
-        growth
+        team_name,
+        initial_scores.get(team_name, {}).get('papers', 0),
+        initial_scores.get(team_name, {}).get('models', 0),
+        growth,
+        all_params.get(team_name, {}).get('hidden', {}),
+        all_params.get(team_name, {}).get('coop', {})
     )
-    all_results[name] = {
-        'papers': int(final_p),
-        'models': int(final_m),
+    all_results[team_name] = {
+        'papers': int(final_p), 'models': int(final_m),
         'paper_delta': int(details.get('total_paper_delta', 0)),
         'model_delta': float(details.get('total_model_delta', 0)),
-        'delta_details': details  # 상세 내역 저장
+        'delta_details': details
     }
 
-
-# 3. 미국, 중국 데이터 업데이트
+# 미국, 중국 데이터 랜덤 업데이트
 us_papers_initial, us_models_initial = initial_scores.get('United States', {}).get('papers', 0), initial_scores.get('United States', {}).get('models', 0)
 us_delta = random.randint(150, 250)
 us_papers_final = us_papers_initial + us_delta
 us_models_final = utils.calculate_ai_models(us_papers_final)
-all_results['United States'] = {
-    'papers': us_papers_final, 'models': int(us_models_final),
-    'paper_delta': us_delta, 'model_delta': us_models_final - us_models_initial
-}
+all_results['United States'] = {'papers': us_papers_final, 'models': int(us_models_final), 'paper_delta': us_delta, 'model_delta': us_models_final - us_models_initial}
 
 cn_papers_initial, cn_models_initial = initial_scores.get('China', {}).get('papers', 0), initial_scores.get('China', {}).get('models', 0)
 cn_delta = random.randint(200, 300)
 cn_papers_final = cn_papers_initial + cn_delta
 cn_models_final = utils.calculate_ai_models(cn_papers_final)
-all_results['China'] = {
-    'papers': cn_papers_final, 'models': int(cn_models_final),
-    'paper_delta': cn_delta, 'model_delta': cn_models_final - cn_models_initial
-}
+all_results['China'] = {'papers': cn_papers_final, 'models': int(cn_models_final), 'paper_delta': cn_delta, 'model_delta': cn_models_final - cn_models_initial}
 
+# --- 2. UI 렌더링 ---
+# 로그인한 팀의 요약
 
-# --- UI 렌더링 ---
-# 1. 로그인한 팀의 요약 표시
+# --- Balloon effect for the winner ---
+if all_results:
+    # Find the team with the highest number of models
+    winner_team = max(all_results, key=lambda team: all_results[team].get('models', 0))
+    
+    # If the logged-in user is the winner, show the balloons
+    if winner_team == my_team:
+        st.balloons()
+
 st.header(f"{config.country_flags[my_team]} Your Nation's Progress")
 my_results = all_results.get(my_team, {})
 col1, col2 = st.columns(2)
-col1.metric("⚛ Total Papers", my_results.get('papers', 'N/A'))
-col2.metric("🪄 Total Models", my_results.get('models', 'N/A'))
+col1.metric("⚛ Total Papers", f"{my_results.get('papers', 'N/A'):,}")
+col2.metric("🪄 Total Models", f"{my_results.get('models', 'N/A'):,}")
 
-# "Detailed Breakdown" 부분을 수정하여 상세 내역 표시
 with st.expander("🔍 View Detailed Breakdown of Your Growth"):
     details = my_results.get('delta_details', {})
     if details:
@@ -106,37 +123,30 @@ with st.expander("🔍 View Detailed Breakdown of Your Growth"):
             st.markdown("##### 📄 Paper Growth Details")
             st.markdown(f"- Base Growth: `{details.get('base_growth', 0)}`")
             st.markdown(f"- Domestic Event: `{details.get('domestic_paper', 0)}`")
-            st.markdown(f"- International Event: `{details.get('international_paper', 0)}`")
             st.markdown(f"**Total: `{int(details.get('total_paper_delta', 0))}`**")
-        
         with col2:
             st.markdown("##### 🪄 Model Growth Details")
             st.markdown(f"- From New Papers: `+{details.get('from_papers_model', 0):.2f}`")
             st.markdown(f"- Domestic Event: `{details.get('domestic_model', 0)}`")
-            st.markdown(f"- International Event: `{details.get('international_model', 0)}`")
             st.markdown(f"**Total: `{details.get('total_model_delta', 0):.2f}`**")
-    else:
-        st.write("No growth details available for this round.")
 st.markdown("---")
 
-# 2. Global AI Superpowers 표시
+# Global AI Superpowers
 st.header("🌍 Global AI Superpowers")
 col1, col2 = st.columns(2)
 with col1:
-    st.markdown("### 🇺🇸 United States")
+    st.markdown(f"### {config.country_flags['United States']} United States")
     us_data = all_results.get('United States', {})
-    st.metric("Total Papers", us_data.get('papers', 'N/A'))
-    st.metric("Estimated Models", us_data.get('models', 'N/A'))
+    st.metric("Total Papers", f"{us_data.get('papers', 'N/A'):,}")
+    st.metric("Estimated Models", f"{us_data.get('models', 'N/A'):,}")
 with col2:
-    st.markdown("### 🇨🇳 China")
+    st.markdown(f"### {config.country_flags['China']} China")
     cn_data = all_results.get('China', {})
-    st.metric("Total Papers", cn_data.get('papers', 'N/A'))
-    st.metric("Estimated Models", cn_data.get('models', 'N/A'))
+    st.metric("Total Papers", f"{cn_data.get('papers', 'N/A'):,}")
+    st.metric("Estimated Models", f"{cn_data.get('models', 'N/A'):,}")
 st.markdown("---")
-# --- 추가된 부분 끝 ---
 
-
-# 3. 기능 1: 랭킹 리더보드
+# 리더보드
 st.header("🏆 Leaderboard")
 leaderboard_data = []
 for name, data in all_results.items():
@@ -147,21 +157,18 @@ for name, data in all_results.items():
         "Paper Growth": f"+{data['paper_delta']}" if data['paper_delta'] >= 0 else str(data['paper_delta']),
         "Model Growth": f"+{data['model_delta']:.2f}" if data['model_delta'] >= 0 else f"{data['model_delta']:.2f}",
     })
+df_leaderboard = pd.DataFrame(leaderboard_data).sort_values(by=["Models", "Papers"], ascending=False).reset_index(drop=True)
+df_leaderboard.index = df_leaderboard.index + 1
+df_leaderboard.index.name = "Rank"
+st.dataframe(df_leaderboard, use_container_width=True)
 
-df = pd.DataFrame(leaderboard_data)
-df = df.sort_values(by=["Models", "Papers"], ascending=False).reset_index(drop=True)
-df.index = df.index + 1
-df.index.name = "Rank"
-st.dataframe(df, use_container_width=True)
-
-
-# 4. 기능 2: 누적 성장 그래프
+# 누적 성장 그래프
 st.header("📈 Cumulative Growth Trend (Models)")
 
 # 탭을 사용하여 모델 수와 논문 수 그래프 분리
 tab1, tab2 = st.tabs(["🪄 Models Growth", "📄 Papers Growth"])
 
-# 라운드 0(초기값) 데이터 생성
+# --- Round 0 (초기값) 데이터 생성 ---
 round_0_data_models = {'round': 0}
 round_0_data_papers = {'round': 0}
 
@@ -171,25 +178,45 @@ initial_player_sum_papers = 0
 for name, data in config.initial_data.items():
     round_0_data_models[name] = data['models']
     round_0_data_papers[name] = data['papers']
-    if name in config.team_credentials:
+    
+    # 4 Players Sum을 위해 config.team_credentials에 있는 국가들만 합산
+    if name in config.team_credentials: # config.team_credentials에 있는 플레이어 국가들만 합산
         initial_player_sum_models += data['models']
         initial_player_sum_papers += data['papers']
 
+# '4 Players Sum' 데이터를 Round 0에 추가
 round_0_data_models['4 Players Sum'] = initial_player_sum_models
 round_0_data_papers['4 Players Sum'] = initial_player_sum_papers
+
+# 'United States'와 'China' 데이터도 Round 0에 포함
+# config.initial_data에서 직접 가져오므로 별도 처리 불필요 (이미 위 루프에서 포함됨)
+# 다만, ensure that these are always included even if not explicitly in config.team_credentials
+# 이전에 미국/중국을 따로 합산하던 로직이 있다면 이 부분은 initial_data를 기준으로 한번에 처리합니다.
+# 안전을 위해 한 번 더 명시적으로 확인:
+if 'United States' not in round_0_data_models:
+    round_0_data_models['United States'] = config.initial_data.get('United States', {}).get('models', 0)
+    round_0_data_papers['United States'] = config.initial_data.get('United States', {}).get('papers', 0)
+if 'China' not in round_0_data_models:
+    round_0_data_models['China'] = config.initial_data.get('China', {}).get('models', 0)
+    round_0_data_papers['China'] = config.initial_data.get('China', {}).get('papers', 0)
+
 
 # 차트 데이터 리스트에 라운드 0을 먼저 추가
 chart_data_models = [round_0_data_models]
 chart_data_papers = [round_0_data_papers]
 
-# 현재까지의 기록을 차트 데이터에 추가
+# 현재까지의 기록을 차트 데이터에 추가 (기존 로직 유지)
 new_round_to_save = {
     "round": current_round_num,
     "scores": all_results
 }
-current_history = history + [new_round_to_save]
+current_history = history + [new_round_to_save] # 이 부분은 save_history 호출 전에만 사용
 
-for round_data in current_history:
+for round_data in current_history: # 이 루프는 이미 저장된 history와 현재 라운드 결과 all_results를 합친 것
+    # Round 0은 이미 위에서 추가되었으므로, round_num이 0인 경우는 건너뜁니다.
+    if round_data['round'] == 0:
+        continue 
+        
     round_num = round_data['round']
     scores = round_data['scores']
     
@@ -197,16 +224,18 @@ for round_data in current_history:
     row_papers = {'round': round_num}
     
     player_sum_models, player_sum_papers = 0, 0
-    for name in config.team_credentials.keys():
+    # 모든 국가에 대해 데이터 추가
+    all_countries_for_chart = list(config.team_credentials.keys()) + ["United States", "China"] # 그래프에 포함할 모든 국가
+    for name in all_countries_for_chart:
+        # scores 딕셔너리에 해당 국가의 데이터가 있는지 확인하고 가져옵니다.
         row_models[name] = scores.get(name, {}).get('models', 0)
         row_papers[name] = scores.get(name, {}).get('papers', 0)
-        player_sum_models += row_models[name]
-        player_sum_papers += row_papers[name]
         
-    row_models['United States'] = scores.get('United States', {}).get('models', 0)
-    row_papers['United States'] = scores.get('United States', {}).get('papers', 0)
-    row_models['China'] = scores.get('China', {}).get('models', 0)
-    row_papers['China'] = scores.get('China', {}).get('papers', 0)
+        # '4 Players Sum'에는 config.team_credentials에 있는 플레이어 국가들만 합산
+        if name in config.team_credentials:
+            player_sum_models += row_models[name]
+            player_sum_papers += row_papers[name]
+        
     row_models['4 Players Sum'] = player_sum_models
     row_papers['4 Players Sum'] = player_sum_papers
     
@@ -218,8 +247,14 @@ with tab1:
     if chart_data_models:
         df_models = pd.DataFrame(chart_data_models).set_index('round')
         
-        # 범례 순서 지정
-        legend_order = ["United States", "China", "4 Players Sum", "Korea", "Japan", "Mongolia", "Taiwan"]
+        # 범례 순서 지정: United States, China, 4 Players Sum이 먼저 오도록
+        # config.team_credentials에 있는 플레이어 국가들을 동적으로 추가합니다.
+        player_countries_sorted = sorted(config.team_credentials.keys()) # 알파벳 순 정렬 등 필요시 변경
+        legend_order = ["United States", "China", "4 Players Sum"] + player_countries_sorted
+        
+        # 실제 df_models에 존재하는 컬럼만 선택하여 순서를 맞춥니다.
+        legend_order = [col for col in legend_order if col in df_models.columns]
+
         df_models = df_models[legend_order]
         
         # Plotly 그래프 생성
@@ -247,8 +282,10 @@ with tab2:
     if chart_data_papers:
         df_papers = pd.DataFrame(chart_data_papers).set_index('round')
         
-        # 범례 순서 지정
-        legend_order = ["United States", "China", "4 Players Sum", "Korea", "Japan", "Mongolia", "Taiwan"]
+        # 범례 순서 지정: Models Growth 탭과 동일하게 적용
+        legend_order = ["United States", "China", "4 Players Sum"] + player_countries_sorted
+        legend_order = [col for col in legend_order if col in df_papers.columns]
+        
         df_papers = df_papers[legend_order]
         
         # Plotly 그래프 생성
@@ -271,71 +308,57 @@ with tab2:
         )
         st.plotly_chart(fig_papers, use_container_width=True)
 
-# 5. 기능 3: 이번 라운드 국제 이벤트
+# 발생한 이벤트 목록
+st.markdown("---")
 st.header("🔔 Events This Round")
+with st.expander(f"🏠 Domestic Event in {my_team}"):
+    try:
+        domestic_event_file_path = config.shared_dir / f"domestic_{my_team}.json"
+        if os.path.exists(domestic_event_file_path):
+            with open(domestic_event_file_path, "r") as f:
+                all_domestic_events = json.load(f)
+                latest_domestic_event = all_domestic_events[-1] if isinstance(all_domestic_events, list) else all_domestic_events
+                if latest_domestic_event:
+                    st.markdown(f"**{latest_domestic_event.get('title', 'N/A')}**")
+                    st.write(latest_domestic_event.get('description', 'N/A'))
+        else:
+            st.info(f"No domestic event occurred for {my_team} this round.")
+    except Exception as e:
+        st.error(f"An error occurred while loading your domestic event: {e}")
 
-# 플레이어의 Domestic Event 표시
-st.subheader(f"Domestic Event in {my_team}")
-try:
-    with open(config.shared_dir / f"domestic_{my_team}.json", "r") as f:
-        domestic_event = json.load(f)
-    st.markdown(f"**{domestic_event['title']}**")
-    st.write(domestic_event['description'])
-except FileNotFoundError:
-    st.warning(f"Your domestic event file was not found.")
-
-# 국제 이벤트 표시
-st.subheader("International Events (Applied to all nations)")
-try:
-    with open(config.shared_dir / "international.json", "r") as f:
-        international_events = json.load(f)
-    for i, event in enumerate(international_events, 1):
-        st.markdown(f"**{i}. {event['title']}**")
-        st.write(event['description'])
-except FileNotFoundError:
-    st.warning("International events file not found for this round.")
-
-
-# --- 라운드 종료 및 다음 라운드 시작 버튼 ---
+# 인용구 및 다음 라운드 버튼
+st.markdown("---")
+st.markdown("""
+> *"China is not behind, they are right there with us... Remember, this is not a sprint, it's an infinite race. This is a country with a great will, and we will be competing for a long time."*
+>
+> <p style='text-align: right; font-style: italic;'>– Jensen Huang, NVIDIA CEO, at the 2025 Technology Conference, Washington D.C.</p>
+""", unsafe_allow_html=True)
 st.markdown("---")
 
-# 현재 라운드 기록을 저장하는 버튼
 if st.button("End Round and Save History"):
     utils.save_history(new_round_to_save)
-    st.success(f"Round {current_round_num} has been successfully recorded. Proceed to the next round.")
-    #st.balloons()
+    st.success(f"Round {current_round_num} has been successfully recorded.")
 
-# 다음 라운드를 시작하는 버튼
-if st.button("🚀 Start Next Round"):
-    # 1. 이번 라운드에서 생성된 공유 파일들을 삭제하여 초기화합니다.
+if st.button("🚀 Start Next Round", type="primary"):
     st.toast("Clearing data for the new round...")
+    files_to_clear = [config.shared_dir / "international.json"]
     
-    # 국제 이벤트 파일 삭제
-    international_event_file = config.shared_dir / "international.json"
-    if international_event_file.exists():
-        international_event_file.unlink()
+    #for country_name in all_player_teams:
+        #files_to_clear.append(config.shared_dir / f"domestic_{country_name}.json")
+        #files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
+    
+    for f in files_to_clear:
+        if f.exists():
+            f.unlink()
 
-    # 모든 플레이어의 국내 이벤트 및 협력 파일 삭제
-    for country_name in config.team_credentials.keys():
-        domestic_file = config.shared_dir / f"domestic_{country_name}.json"
-        if domestic_file.exists():
-            domestic_file.unlink()
-
-        coop_file = config.shared_dir / f"cooperation_{country_name}.json"
-        if coop_file.exists():
-            coop_file.unlink()
-            
-    # 2. 라운드별로 초기화가 필요한 session_state 변수들을 삭제합니다.
-    keys_to_clear = [
-        "rolling", "event_result", "event_shown", "intel_shown",
-        "adjustment_confirmed", "international_events", "cooperation_state",
-        "intel_step1_result_value", "intel_result_step2", "intel_result_step3", "intel_result_step4",
-        "intel_shown_step2", "intel_shown_step3", "intel_shown_step4"
+    keys_to_clear_from_session = [
+        "growth_rate", "cooperation_state", "cooperation_confirmed",
+        # 필요에 따라 다른 라운드별 세션 상태 키 추가
     ]
-    for key in keys_to_clear:
+    for key in keys_to_clear_from_session:
         if key in st.session_state:
             del st.session_state[key]
             
-    # 3. Policy 페이지로 이동하여 새 라운드를 시작합니다.
     st.success("Starting new round... Navigating to Policy Phase!")
-    st.switch_page("pages/2_Policy.py")
+    time.sleep(2)
+    st.switch_page("pages/1_Circumstances.py")
