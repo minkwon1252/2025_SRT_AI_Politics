@@ -82,7 +82,7 @@ def category_to_multiplier(val, mapping):
     
 def compute_growth_rate(params, fixed):
     try:
-        tech_term = np.log(1 + 1.2 * params["Semiconductor"] + 0.8 * params["Electricity"] + params["Open_Source_Adoption"] + 1.5 * params["AI_Investment_Focus"]) ** 1.2
+        tech_term = np.log(1 + 1.2 * params["Semiconductor"] + 0.8 * params["Electricity"] + params["Open_Source_Adoption"] + 1.5 * params["AI_Fund"]) ** 1.2
         human_term = np.sqrt((params["Talent_Index"] + 1) * (params["Education_Investment"] + 1))
         cultural_term = 1.5 * 10 * (np.tanh(0.2 * (params["AI_Literacy_Education"] + params["Democratic_Stability_Index"])) + 1)
         labor_term = fixed["Labor"] ** 0.75
@@ -98,7 +98,7 @@ PARAMETER_TERM_MAP = {
     "Semiconductor": "Technical",
     "Electricity": "Technical",
     "Open_Source_Adoption": "Technical",
-    "AI_Investment_Focus": "Technical",
+    "AI_Fund": "Technical",
     "Talent_Index": "Human Resources",
     "Education_Investment": "Human Resources",
     "AI_Literacy_Education": "Socio-Cultural",
@@ -110,7 +110,7 @@ def compute_terms(params):
     각 파라미터 그룹(항)의 값을 계산하여 딕셔너리로 반환합니다.
     """
     try:
-        tech_term = np.log(1 + 1.2 * params.get("Semiconductor", 0) + 0.8 * params.get("Electricity", 0) + params.get("Open_Source_Adoption", 0) + 1.5 * params.get("AI_Investment_Focus", 0)) ** 1.2
+        tech_term = np.log(1 + 1.2 * params.get("Semiconductor", 0) + 0.8 * params.get("Electricity", 0) + params.get("Open_Source_Adoption", 0) + 1.5 * params.get("AI_Fund", 0)) ** 1.2
         human_term = np.sqrt((params.get("Talent_Index", 0) + 1) * (params.get("Education_Investment", 0) + 1))
         cultural_term = 1.5 * 10 * (np.tanh(0.2 * (params.get("AI_Literacy_Education", 0) + params.get("Democratic_Stability_Index", 0))) + 1)
         
@@ -264,54 +264,66 @@ def get_coop_info(param, true_val, intel_score, options=None):
 # --- Summary Page Helper Functions ---
 def calculate_round_results(team_name, initial_papers, initial_models, growth_rate, hidden_params, coop_params_raw):
     """
-    한 팀의 라운드 결과를 계산합니다. (국내 이벤트만 고려)
+    한 팀의 라운드 결과를 계산합니다. (국내 및 국제 이벤트 모두 반영)
     """
     delta_paper_domestic = 0
     delta_model_domestic = 0
-    
-    # === 국제 이벤트 영향은 0으로 고정 ===
     delta_paper_international = 0
     delta_model_international = 0
+    
+    # 평가에 필요한 파라미터들 병합
+    team_fixed_values = config.fixed_values.get(team_name, {})
+    evaluation_params = {**team_fixed_values, **hidden_params}
+    
+    gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0}
+    if "GDP" in evaluation_params and isinstance(evaluation_params["GDP"], str):
+        evaluation_params["GDP_value"] = gdp_map.get(evaluation_params["GDP"], 0)
 
-     # 이벤트 수식 평가를 위해 GDP 문자열을 숫자 값으로 변환
-    gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0} # 조건문에 사용할 숫자값 (조정 가능)
-    if "GDP" in hidden_params and isinstance(hidden_params["GDP"], str):
-        # hidden_params에 'GDP_value'라는 새로운 숫자 파라미터를 추가
-        hidden_params["GDP_value"] = gdp_map.get(hidden_params["GDP"], 0)
+    nat_resource_map = {"Low": 0.5, "High": 1.0}
+    if "Natural_Resource_Reserves" in evaluation_params and "Resource_value" not in evaluation_params:
+         evaluation_params["Resource_value"] = nat_resource_map.get(evaluation_params["Natural_Resource_Reserves"], 0)
 
-    # 이벤트 수식 평가를 위해 Natural resource 문자열을 숫자 값으로 변환
-    nat_resource_map = {"Low": 0.5, "High": 1.0} # 조건문에 사용할 숫자값 (조정 가능)
-    if "Natural_Resource_Reserves" in hidden_params and isinstance(hidden_params["Natural_Resource_Reserves"], str):
-        hidden_params["Resource_value"] = gdp_map.get(hidden_params["Natural_Resource_Reserves"], 0)
-
-    # 국내 이벤트 처리
+    # 국내 이벤트 처리 (파일의 모든 이벤트를 누적)
     domestic_event_file_path = config.shared_dir / f"domestic_{team_name}.json"
     if os.path.exists(domestic_event_file_path):
         try:
             with open(domestic_event_file_path, "r") as f:
                 all_domestic_events = json.load(f)
-                latest_domestic_event = {}
-                # 파일 내용이 리스트 또는 딕셔너리인 경우 모두 처리
-                if isinstance(all_domestic_events, list) and all_domestic_events:
-                    if isinstance(all_domestic_events[-1], dict):
-                        latest_domestic_event = all_domestic_events[-1]
-                elif isinstance(all_domestic_events, dict):
-                    latest_domestic_event = all_domestic_events
-            
-            # 국내 이벤트 delta 값 계산
-            delta_paper_domestic = evaluate_delta(latest_domestic_event.get("delta_papers", "0"), hidden_params)
-            delta_model_domestic = evaluate_delta(latest_domestic_event.get("delta_models", "0"), hidden_params)
+                if isinstance(all_domestic_events, list):
+                    for event in all_domestic_events:
+                        delta_paper_domestic += evaluate_delta(event.get("delta_papers", "0"), evaluation_params)
+                        delta_model_domestic += evaluate_delta(event.get("delta_models", "0"), evaluation_params)
+                else: # 단일 이벤트인 경우 (하위 호환)
+                    delta_paper_domestic += evaluate_delta(all_domestic_events.get("delta_papers", "0"), evaluation_params)
+                    delta_model_domestic += evaluate_delta(all_domestic_events.get("delta_models", "0"), evaluation_params)
+
         except (json.JSONDecodeError, IndexError) as e:
             st.warning(f"Could not process domestic event file for {team_name}: {e}")
 
+    # 국제 이벤트 처리
+    international_event_file = config.shared_dir / "international.json"
+    if os.path.exists(international_event_file):
+        try:
+            with open(international_event_file, "r") as f:
+                all_international_events = json.load(f)
+            
+            for event in all_international_events:
+                # 국제 이벤트는 각 파트너와의 협력 관계에 따라 효과가 달라지므로 evaluate_event_international 사용
+                delta_paper_international += evaluate_event_international(event.get("delta_papers", "0"), evaluation_params, coop_params_raw)
+                delta_model_international += evaluate_event_international(event.get("delta_models", "0"), evaluation_params, coop_params_raw)
+
+        except (json.JSONDecodeError, IndexError) as e:
+            st.warning(f"Could not process international event file: {e}")
+
+
     # 최종 점수 계산
-    total_paper_delta = growth_rate + delta_paper_domestic + delta_paper_international # international은 0
+    total_paper_delta = growth_rate + delta_paper_domestic + delta_paper_international
     final_papers = initial_papers + total_paper_delta
     final_papers = max(0, final_papers)
 
     new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
     
-    total_model_delta = new_models_from_papers + delta_model_domestic + delta_model_international # international은 0
+    total_model_delta = new_models_from_papers + delta_model_domestic + delta_model_international
     final_models = initial_models + total_model_delta
     final_models = max(0.0, final_models)
 
@@ -319,11 +331,11 @@ def calculate_round_results(team_name, initial_papers, initial_models, growth_ra
     delta_details = {
         'base_growth': growth_rate,
         'domestic_paper': delta_paper_domestic,
-        'international_paper': delta_paper_international, # 값은 0이지만 키는 유지
+        'international_paper': delta_paper_international,
         'total_paper_delta': total_paper_delta,
         'from_papers_model': new_models_from_papers,
         'domestic_model': delta_model_domestic,
-        'international_model': delta_model_international, # 값은 0이지만 키는 유지
+        'international_model': delta_model_international,
         'total_model_delta': total_model_delta
     }
     

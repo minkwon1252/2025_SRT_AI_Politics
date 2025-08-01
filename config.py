@@ -30,7 +30,7 @@ fixed_values = {
 
 
 parameter_groups = {
-    "🟨 Technical Support": ["Semiconductor", "Electricity", "Open_Source_Adoption", "IP_Protection_Strength", "AI_Investment_Focus"],
+    "🟨 Technical Support": ["Semiconductor", "Electricity", "Open_Source_Adoption", "IP_Protection_Strength", "AI_Fund"],
     "🟥 Human Capital": ["Talent_Index", "Education_Investment"],
     "🟦 Cultural Infrastructure": ["Deployment_Infrastructure", "Dual_Use_Restriction_Strictness", "AI_Literacy_Education", "Democratic_Stability_Index"],
     "⬛ Second Cold War Stance": ["Alignment_US", "Alignment_China"],
@@ -44,7 +44,7 @@ parameter_descriptions = {
     "Electricity": "Big models need big energy!",
     "Open_Source_Adoption": "Openness to using and contributing to open-source AI ecosystems, which accelerates innovation and collaboration cheaply.",
     "IP_Protection_Strength": "Prevents foreign exploitation(spies) and builds local industry",
-    "AI_Investment_Focus": "Overall funding level for AI R&D and systems",
+    "AI_Fund": "Overall funding level for AI R&D and systems",
     "Talent_Index": "How smart are your people? More brains, faster models and better breakthroughs.",
     "Education_Investment": "Government support for STEM and AI education across all levels — from early schooling to advanced research institutions.",
     "Deployment_Infrastructure": "Ability to deploy AI in sectors like healthcare, public service, energy",
@@ -73,8 +73,8 @@ parameter_insights = {
     "Open_Source_Adoption": """
     **Open Source Adoption** reflects how actively a country leverages and contributes to open AI models, datasets, and tools—like Meta’s LLaMA or Google’s Gemma. High adoption enables rapid catch-up with frontier technologies, even with limited internal capabilities, and accelerates innovation through global collaboration.
     """,
-    "AI_Investment_Focus": """
-    **AI Investment Focus** measures how much funding is being directed—by both government and private sector—into AI R&D and infrastructure. It directly shapes the scale and quality of the AI talent pool, computing resources, and startup ecosystem, acting as the engine of a country’s AI progress.
+    "AI_Fund": """
+    **AI Fund** measures how much funding is being directed—by both government and private sector—into AI R&D and infrastructure. It directly shapes the scale and quality of the AI talent pool, computing resources, and startup ecosystem, acting as the engine of a country’s AI progress.
     """,
     "Talent_Index": """
     **Talent Index** indicates the quality and quantity of AI researchers, developers, and data scientists a country possesses. Talented individuals publish influential papers, build powerful AI models, and solve technical challenges. Ultimately, the AI race is often called a “war for talent.”
@@ -149,14 +149,14 @@ coop_param_keys = list(coop_params.keys())
 domestic_events = {
     1: {
         "title": "University Research Budget Cut",
-        "description": "Due to nationwide fiscal tightening, the government slashes public university research budgets. AI R&D slows significantly in countries with weak AI_Investment_Focus, Talent_Index, or Education_Investment—especially if the total is below 20. Labs may close, talent disperses, and progress halts. In 2024, South Korea cut its R&D budget by 15%, triggering backlash from scientists and fears of long-term damage to innovation capacity.",
-        "delta_models": "-2 * (1 if AI_Investment_Focus + Talent_Index + Education_Investment < 20 else 0.5 if AI_Investment_Focus + Talent_trial0Index + Education_Investment < 25 else 0)",
-        "delta_papers": "10 * (1 - log((3*AI_Investment_Focus + 6*Talent_Index + 1*Education_Investment)/10))"
+        "description": "Due to nationwide fiscal tightening, the government slashes public university research budgets. AI R&D slows significantly in countries with weak AI_Fund, Talent_Index, or Education_Investment—especially if the total is below 20. Labs may close, talent disperses, and progress halts. In 2024, South Korea cut its R&D budget by 15%, triggering backlash from scientists and fears of long-term damage to innovation capacity.",
+        "delta_models": "-2 * (1 if AI_Fund + Talent_Index + Education_Investment < 20 else 0.5 if AI_Fund + Talent_trial0Index + Education_Investment < 25 else 0)",
+        "delta_papers": "10 * (1 - log((3*AI_Fund + 6*Talent_Index + 1*Education_Investment)/10))"
     },
     2: {
         "title": "AI Researcher Brain Drain",
-        "description": "Frustrated by stagnant local support, young AI researchers seek better funding, labs, and academic freedom abroad—especially when Talent_Index and AI_Investment_Focus are low. Nations with weak education systems also see a drop in paper output. In 2023, South Korean researchers protested shrinking R&D budgets, warning of an exodus of early-career scientists to the U.S. and Europe.",
-        "delta_models": "-2 * (1 if Talent_Index + AI_Investment_Focus < 12 else 0.5)",
+        "description": "Frustrated by stagnant local support, young AI researchers seek better funding, labs, and academic freedom abroad—especially when Talent_Index and AI_Fund are low. Nations with weak education systems also see a drop in paper output. In 2023, South Korean researchers protested shrinking R&D budgets, warning of an exodus of early-career scientists to the U.S. and Europe.",
+        "delta_models": "-2 * (1 if Talent_Index + AI_Fund < 12 else 0.5)",
         "delta_papers": "round(-20 * exp(-0.1 * (Talent_Index + Education_Investment)))"
     },
     3: {
@@ -197,9 +197,9 @@ domestic_events = {
     },
     9: {
         "title": "Political Turmoil Delays Tech Bills",
-        "description": "s AI governance or investment bills, stalling national strategy. When Democratic_Stability_Index is low—even with moderate AI_Investment_Focus or IP_Protection_Strength—critical legislation struggles to pass. This creates uncertainty, discouraging private investment and slowing model and paper output. It happens everywhere, everytime.",
+        "description": "s AI governance or investment bills, stalling national strategy. When Democratic_Stability_Index is low—even with moderate AI_Fund or IP_Protection_Strength—critical legislation struggles to pass. This creates uncertainty, discouraging private investment and slowing model and paper output. It happens everywhere, everytime.",
         "delta_models": "-2 * (1 - Democratic_Stability_Index / 10)",
-        "delta_papers": "round(6 * (-1- log((4*AI_Investment_Focus + 2*Democratic_Stability_Index+ IP_Protection_Strength)/7)))"
+        "delta_papers": "round(6 * (-1- log((4*AI_Fund + 2*Democratic_Stability_Index+ IP_Protection_Strength)/7)))"
     },
     10: {
         "title": "Delayed AI Curriculum Integration",
@@ -226,8 +226,8 @@ domestic_events = {
     },
     13: {
         "title": "Local Government Budget Misallocation",
-        "description": "Funds intended for AI infrastructure are diverted to unrelated projects, undermining national goals. When Deployment_Infrastructure and AI_Investment_Focus are low—even in regions with high GDP—budget inefficiencies prevent the rollout of essential AI systems. Real-world parallels include cases in countries where local governments have redirected tech development funds toward short-term political projects, delaying long-term AI capacity building.",
-        "delta_models": "round(-2*(3-exp((Deployment_Infrastructure+AI_Investment_Focus)/20)))",
+        "description": "Funds intended for AI infrastructure are diverted to unrelated projects, undermining national goals. When Deployment_Infrastructure and AI_Fund are low—even in regions with high GDP—budget inefficiencies prevent the rollout of essential AI systems. Real-world parallels include cases in countries where local governments have redirected tech development funds toward short-term political projects, delaying long-term AI capacity building.",
+        "delta_models": "round(-2*(3-exp((Deployment_Infrastructure+AI_Fund)/20)))",
         "delta_papers": "-20 * (1 if GDP_value > 0.9 else 0.2)"
     },
     14: {
@@ -262,8 +262,8 @@ domestic_events = {
     },
     19: {
         "title": "Tech Labor Strike",
-        "description": "Domestic chip plant or AI infrastructure engineers go on strike over wages, halting critical operations. When Labor conditions are poor and AI_Investment_Focus is insufficient, discontent among highly skilled workers grows. Such unrest disrupts supply chains and delays both model training and deployment. Real-world examples include the 2023 TSMC subcontractor protests and U.S. chip industry union disputes.",
-        "delta_models": "round( -2 * (1 - np.mean([Labor * 10, AI_Investment_Focus]) / 10)*min(1, max(0, 1 - (Labor - 0.8)*10))*min(1,max(0, 1 - (AI_Investment_Focus - 7)/3)) )",
+        "description": "Domestic chip plant or AI infrastructure engineers go on strike over wages, halting critical operations. When Labor conditions are poor and AI_Fund is insufficient, discontent among highly skilled workers grows. Such unrest disrupts supply chains and delays both model training and deployment. Real-world examples include the 2023 TSMC subcontractor protests and U.S. chip industry union disputes.",
+        "delta_models": "round( -2 * (1 - np.mean([Labor * 10, AI_Fund]) / 10)*min(1, max(0, 1 - (Labor - 0.8)*10))*min(1,max(0, 1 - (AI_Fund - 7)/3)) )",
         "delta_papers": "round( -12 * (1 - (Semiconductor+ Electricity) / 20))"
     },
     20: {
@@ -274,14 +274,14 @@ domestic_events = {
     },
     21: {
         "title": "Increase Tax on AI Model Commercialization",
-        "description": "A new tax on AI model commercialization discourages deployment and private-sector investment. When AI_Investment_Focus and IP_Protection_Strength are weak—and GDP growth is modest—companies see reduced incentives to bring models to market. Real-world examples include proposed windfall taxes on digital platforms in the EU and debates in the U.S. over taxing AI-driven profits, which have sparked concerns about regulatory overreach stifling innovation.",
-        "delta_models": "round(-2 * (1 - np.mean([AI_Investment_Focus, IP_Protection_Strength]) / 10)* min(1,max(0, 1 - (GDP_value - 1.0))) )",
+        "description": "A new tax on AI model commercialization discourages deployment and private-sector investment. When AI_Fund and IP_Protection_Strength are weak—and GDP growth is modest—companies see reduced incentives to bring models to market. Real-world examples include proposed windfall taxes on digital platforms in the EU and debates in the U.S. over taxing AI-driven profits, which have sparked concerns about regulatory overreach stifling innovation.",
+        "delta_models": "round(-2 * (1 - np.mean([AI_Fund, IP_Protection_Strength]) / 10)* min(1,max(0, 1 - (GDP_value - 1.0))) )",
         "delta_papers": "round(-10 * exp(-0.1 * Talent_Index))"
     },
     22: {
         "title": "AI Research Tax Audit Scare",
-        "description": "A surprise wave of retrospective tax audits on AI research grants unnerves private funders—especially in countries with low AI_Investment_Focus or fragile Talent_Index. Funding slows as VCs and corporates pull back.",
-        "delta_models": "round(-0.9 * (1 - AI_Investment_Focus / 14))",
+        "description": "A surprise wave of retrospective tax audits on AI research grants unnerves private funders—especially in countries with low AI_Fund or fragile Talent_Index. Funding slows as VCs and corporates pull back.",
+        "delta_models": "round(-0.9 * (1 - AI_Fund / 14))",
         "delta_papers": "round(-5 * exp(-0.1 * Talent_Index))"
     },
     23: {
@@ -304,15 +304,15 @@ domestic_events = {
     },
     26: {
         "title": "National AI Research Grant Boost",
-        "description": "A national AI research grant boost leads to a sharp increase in public and university funding. The effect is strongest in countries with high AI_Investment_Focus and Education_Investment, which accelerate model development, and in those with strong Talent_Index, where research capacity quickly translates into paper output. In Canada, the government’s major investment through the Pan-Canadian AI Strategy—especially funding for institutes like Mila and Vector Institute—significantly increased AI research output and global academic collaboration.",
-        "delta_models": "round(2 * (AI_Investment_Focus + Education_Investment) / 20)",
+        "description": "A national AI research grant boost leads to a sharp increase in public and university funding. The effect is strongest in countries with high AI_Fund and Education_Investment, which accelerate model development, and in those with strong Talent_Index, where research capacity quickly translates into paper output. In Canada, the government’s major investment through the Pan-Canadian AI Strategy—especially funding for institutes like Mila and Vector Institute—significantly increased AI research output and global academic collaboration.",
+        "delta_models": "round(2 * (AI_Fund + Education_Investment) / 20)",
         "delta_papers": "round(10 * (Talent_Index + Education_Investment) / 20)"
     },
     27: {
         "title": "Launch of AI Supercomputing Center",
-        "description": "A publicly funded compute cluster for AI research officially opens. The benefits are largest in countries with strong Electricity supply and Deployment_Infrastructure, enabling rapid model development, and in those with advanced Semiconductor capacity and high AI_Investment_Focus, which maximize research output. In Japan, the launch of the Fugaku supercomputer—combined with strong public AI funding and infrastructure—accelerated cutting-edge research in language models and biomedical AI.",
+        "description": "A publicly funded compute cluster for AI research officially opens. The benefits are largest in countries with strong Electricity supply and Deployment_Infrastructure, enabling rapid model development, and in those with advanced Semiconductor capacity and high AI_Fund, which maximize research output. In Japan, the launch of the Fugaku supercomputer—combined with strong public AI funding and infrastructure—accelerated cutting-edge research in language models and biomedical AI.",
         "delta_models": "round(2.5 * (Electricity + Deployment_Infrastructure) / 20)",
-        "delta_papers": "round(8 * (Electricity + Semiconductor + AI_Investment_Focus) / 30)"
+        "delta_papers": "round(8 * (Electricity + Semiconductor + AI_Fund) / 30)"
     },
     28: {
         "title": "AI Literacy Integration in National Curriculum",
@@ -340,9 +340,9 @@ domestic_events = {
     },
     32: {
         "title": "Genius Appears: The Next Turing or Hinton",
-        "description": "A brilliant researcher revolutionizes AI theory and practice. The breakthrough occurs only in countries with exceptional Talent_Index, Education_Investment, and AI_Investment_Focus, where the environment supports world-changing innovation. In Canada, Geoffrey Hinton’s foundational work on neural networks—supported by sustained public research funding—sparked a global deep learning revolution and positioned Canada as an AI research powerhouse.",
-        "delta_models": "round(3 * min(1, max(0, (Talent_Index + Education_Investment + AI_Investment_Focus - 25) / 5)))",
-        "delta_papers": "round(40 * min(1, max(0, (Talent_Index + Education_Investment + AI_Investment_Focus - 25) / 5)))"
+        "description": "A brilliant researcher revolutionizes AI theory and practice. The breakthrough occurs only in countries with exceptional Talent_Index, Education_Investment, and AI_Fund, where the environment supports world-changing innovation. In Canada, Geoffrey Hinton’s foundational work on neural networks—supported by sustained public research funding—sparked a global deep learning revolution and positioned Canada as an AI research powerhouse.",
+        "delta_models": "round(3 * min(1, max(0, (Talent_Index + Education_Investment + AI_Fund - 25) / 5)))",
+        "delta_papers": "round(40 * min(1, max(0, (Talent_Index + Education_Investment + AI_Fund - 25) / 5)))"
     },
     33: {
         "title": "Entrepreneurial Boom: The Next Gates or Musk",
@@ -376,8 +376,8 @@ domestic_events = {
     },
     38: {
         "title": "AI for Public Health Initiative",
-        "description": "National health data projects fuel AI breakthroughs and public trust. Countries with strong AI_Investment_Focus and Open_Source_Adoption accelerate model development, while those with high IP_Protection_Strength and Democratic_Stability_Index generate more research through secure and ethical data sharing. In Taiwan, open-access health initiatives and strong legal safeguards enabled AI-driven pandemic modeling and diagnostics, building public confidence and advancing academic output.",
-        "delta_models": "round(1.8 * (AI_Investment_Focus + Open_Source_Adoption) / 20)",
+        "description": "National health data projects fuel AI breakthroughs and public trust. Countries with strong AI_Fund and Open_Source_Adoption accelerate model development, while those with high IP_Protection_Strength and Democratic_Stability_Index generate more research through secure and ethical data sharing. In Taiwan, open-access health initiatives and strong legal safeguards enabled AI-driven pandemic modeling and diagnostics, building public confidence and advancing academic output.",
+        "delta_models": "round(1.8 * (AI_Fund + Open_Source_Adoption) / 20)",
         "delta_papers": "round(1.2 * (IP_Protection_Strength + Democratic_Stability_Index))"
     },
     39: {
@@ -388,8 +388,8 @@ domestic_events = {
     },
     40: {
         "title": "National Dataset Consortium Formed",
-        "description": "A public-private partnership builds high-quality AI datasets. Countries with strong Open_Source_Adoption and AI_Investment_Focus accelerate model development, while those with high Talent_Index and Deployment_Infrastructure see greater research output from improved data access. In the United States, initiatives like the National AI Research Resource (NAIRR) pilot and collaborations with organizations such as OpenAI, Hugging Face, and Stanford CRFM have focused on building open, large-scale datasets.",
-        "delta_models": "round(2.0 * (Open_Source_Adoption + AI_Investment_Focus) / 10)",
+        "description": "A public-private partnership builds high-quality AI datasets. Countries with strong Open_Source_Adoption and AI_Fund accelerate model development, while those with high Talent_Index and Deployment_Infrastructure see greater research output from improved data access. In the United States, initiatives like the National AI Research Resource (NAIRR) pilot and collaborations with organizations such as OpenAI, Hugging Face, and Stanford CRFM have focused on building open, large-scale datasets.",
+        "delta_models": "round(2.0 * (Open_Source_Adoption + AI_Fund) / 10)",
         "delta_papers": "round(8 * log(1 + Talent_Index + Deployment_Infrastructure) / 2)"
     },
     41: {
@@ -402,25 +402,25 @@ domestic_events = {
         "title": "Energy Grid AI Upgrade",
         "description": "The power grid is optimized using AI, improving availability for compute centers.",
         "delta_models": "round(2.5 * (Electricity + Natural_Resource_Reserves*5+2) / 20)",
-        "delta_papers": "round(4 * (Electricity + AI_Investment_Focus) / 20)"
+        "delta_papers": "round(4 * (Electricity + AI_Fund) / 20)"
     },
     43: {
         "title": "University-Industry AI Consortium Formed",
-        "description": "Companies and universities co-develop next-gen AI systems through a new consortium. Countries with strong Talent_Index and Open_Source_Adoption drive faster model innovation, while those with high Education_Investment and AI_Investment_Focus produce more academic research. In the United States, collaborations like the Stanford–IBM AI Lab and MIT–IBM Watson AI Lab have combined academic talent with industry resources, accelerating breakthroughs in both model development and scientific publication.",
+        "description": "Companies and universities co-develop next-gen AI systems through a new consortium. Countries with strong Talent_Index and Open_Source_Adoption drive faster model innovation, while those with high Education_Investment and AI_Fund produce more academic research. In the United States, collaborations like the Stanford–IBM AI Lab and MIT–IBM Watson AI Lab have combined academic talent with industry resources, accelerating breakthroughs in both model development and scientific publication.",
         "delta_models": "round(2.5 * (Talent_Index + Open_Source_Adoption) / 20)",
-        "delta_papers": "round(9 * (Education_Investment + AI_Investment_Focus) / 5)"
+        "delta_papers": "round(9 * (Education_Investment + AI_Fund) / 5)"
     },
     44: {
         "title": "Energy Grid AI Upgrade",
-        "description": "The power grid is optimized using AI, improving energy availability for compute centers. Countries with strong Electricity infrastructure and ample Natural_Resource_Reserves benefit most in model development, while high AI_Investment_Focus further boosts research output. In China, AI-driven upgrades to the State Grid Corporation’s infrastructure have enhanced load balancing and energy delivery, supporting the country’s expanding AI supercomputing clusters and research facilities.",
+        "description": "The power grid is optimized using AI, improving energy availability for compute centers. Countries with strong Electricity infrastructure and ample Natural_Resource_Reserves benefit most in model development, while high AI_Fund further boosts research output. In China, AI-driven upgrades to the State Grid Corporation’s infrastructure have enhanced load balancing and energy delivery, supporting the country’s expanding AI supercomputing clusters and research facilities.",
         "delta_models": "round(2.5 * (Electricity + Resource_value * 5+2) / 20)",
-        "delta_papers": "round(4 * (Electricity + AI_Investment_Focus) / 12)"
+        "delta_papers": "round(4 * (Electricity + AI_Fund) / 12)"
     },
     45: {
         "title": "AI Application Challenge Fund",
-        "description": "Grants are awarded for solving national problems with AI—such as traffic, pollution, and logistics. Countries with strong Open_Source_Adoption, Talent_Index, and Deployment_Infrastructure see faster model development, while high AI_Investment_Focus and IP_Protection_Strength lead to more impactful research. In the United States, the NSF Convergence Accelerator and AI Institutes program have funded applied AI projects tackling real-world challenges, spurring innovation across sectors and boosting academic output.",
+        "description": "Grants are awarded for solving national problems with AI—such as traffic, pollution, and logistics. Countries with strong Open_Source_Adoption, Talent_Index, and Deployment_Infrastructure see faster model development, while high AI_Fund and IP_Protection_Strength lead to more impactful research. In the United States, the NSF Convergence Accelerator and AI Institutes program have funded applied AI projects tackling real-world challenges, spurring innovation across sectors and boosting academic output.",
         "delta_models": "round(2.5 * (Open_Source_Adoption + Talent_Index + Deployment_Infrastructure) / 30)",
-        "delta_papers": "round(7 * np.tanh((AI_Investment_Focus + IP_Protection_Strength) / 5))"
+        "delta_papers": "round(7 * np.tanh((AI_Fund + IP_Protection_Strength) / 5))"
     },
     46: {
         "title": "AI-Ready City Certification Program",
@@ -448,8 +448,8 @@ domestic_events = {
     },
     50: {
         "title": "Decentralized Research Funding Program",
-        "description": "Local governments are given autonomy to fund AI labs based on regional needs. Countries with high AI_Investment_Focus and Democratic_Stability_Index see stronger model development through adaptive funding, while those with strong Talent_Index and Deployment_Infrastructure gain more research output. In the United States, state-level initiatives—such as California’s AI innovation hubs and Texas university research grants—have enabled region-specific AI development, fostering diverse applications and boosting local academic contributions.",
-        "delta_models": "round(2.0 * (AI_Investment_Focus + Democratic_Stability_Index) / 20)",
+        "description": "Local governments are given autonomy to fund AI labs based on regional needs. Countries with high AI_Fund and Democratic_Stability_Index see stronger model development through adaptive funding, while those with strong Talent_Index and Deployment_Infrastructure gain more research output. In the United States, state-level initiatives—such as California’s AI innovation hubs and Texas university research grants—have enabled region-specific AI development, fostering diverse applications and boosting local academic contributions.",
+        "delta_models": "round(2.0 * (AI_Fund + Democratic_Stability_Index) / 20)",
         "delta_papers": "round(7 * (Talent_Index + Deployment_Infrastructure) / 16)"
     },
     51: {
@@ -478,9 +478,9 @@ domestic_events = {
     },
     55: {
         "title": "Climate-AI Synergy Program",
-        "description": "AI is nationally prioritized for clean energy, environment, and climate research. Countries with high Electricity and Open_Source_Adoption accelerate model development, while those with strong Talent_Index and AI_Investment_Focus produce more impactful research. In the United States, the Bezos Earth Fund’s AI for Climate and Nature Grand Challenge awarded $1.2 million to 24 projects using AI for environmental solutions—demonstrating national commitment to AI–climate synergy and boosting applied research.",
+        "description": "AI is nationally prioritized for clean energy, environment, and climate research. Countries with high Electricity and Open_Source_Adoption accelerate model development, while those with strong Talent_Index and AI_Fund produce more impactful research. In the United States, the Bezos Earth Fund’s AI for Climate and Nature Grand Challenge awarded $1.2 million to 24 projects using AI for environmental solutions—demonstrating national commitment to AI–climate synergy and boosting applied research.",
         "delta_models": "round(2.0 * (Electricity + Open_Source_Adoption) / 20)",
-        "delta_papers": "round(7 * (Talent_Index + AI_Investment_Focus) / 20)"
+        "delta_papers": "round(7 * (Talent_Index + AI_Fund) / 20)"
     },
 }
 
@@ -489,6 +489,28 @@ domestic_events = {
 # ---------------------------------------------------------------
 
 international_events = [
+  {
+    "title": "Theoretical Breakthrough in Algorithms",
+    "description": "A new learning paradigm boosts efficiency and capability.",
+    "delta_models": "round(1.5 * Data_Shared + 0.5 * int(Joint_Research_Project != 'None') + 0.2 * log(1 + Open_Source_Adoption))",
+    "delta_papers": "round(10 * Data_Shared + 5 * int(Joint_Research_Project != 'None') + 0.4 * Open_Source_Adoption)"
+  },
+    {
+    "title": "Trump",
+    "description": "US-aligned countries with shared compute lose access to critical hardware, while others capitalize.",
+    "delta_models": "round(-2 * int(Emergency_Pact_Semiconductor) * int(Joint_Research_Standard == 'US') + 1.5 * int(Joint_Research_Standard == 'China'))",
+    "delta_papers": "round(-15 * int(Emergency_Pact_Semiconductor) * int(Joint_Research_Standard == 'US') + 10 * int(Joint_Research_Standard == 'China'))"
+  },
+    {
+    "title": "China invades Taiwan",
+    "description": "Countries aligned with China benefit; those aligned with the US and with strict civilian-only AI rules face penalties.",
+    "delta_models": "round(2 * (int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard == 'US')) + 1 * int(Joint_Research_DUR == 'No'))",
+    "delta_papers": "round(10 * (int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard == 'US')) - 5 * int(Joint_Research_DUR == 'Yes'))"
+  },
+
+]
+
+international_events1 = [
   {
     "title": "Global Financial Crisis",
     "description": "Economic instability drives nations to prioritize domestic spending, slashing Cooperative projects.",
@@ -540,7 +562,7 @@ international_events = [
   {
     "title": "Theoretical Scaling Limit Discovered",
     "description": "A proof shows that beyond a certain physical scale, AI hardware cannot deliver further gains.",
-    "delta_models": "max(-2, min(0, round(-1 * (1 - Shared_Research_Centers) + -1 * (1 - Joint_Project) + 0.3 * AI_Investment_Focus)))",
+    "delta_models": "max(-2, min(0, round(-1 * (1 - Shared_Research_Centers) + -1 * (1 - Joint_Project) + 0.3 * AI_Fund)))",
     "delta_papers": "max(-20, min(0, round(-15 * (1 - Joint_Project) + 0.2 * log(1 + Open_Source_Adoption))))"
   },
   {
@@ -606,8 +628,8 @@ international_events = [
   {
     "title": "Global Research Funding Boom",
     "description": "AI R&D budgets expand worldwide, favoring countries with collaboration infrastructure.",
-    "delta_models": "round(1.5 * Shared_Research_Centers + 0.3 * int(Joint_Project != 'No') + 0.2 * AI_Investment_Focus)",
-    "delta_papers": "round(9 * Shared_Research_Centers + 5 * int(Joint_Project != 'No') + 0.4 * AI_Investment_Focus)"
+    "delta_models": "round(1.5 * Shared_Research_Centers + 0.3 * int(Joint_Project != 'No') + 0.2 * AI_Fund)",
+    "delta_papers": "round(9 * Shared_Research_Centers + 5 * int(Joint_Project != 'No') + 0.4 * AI_Fund)"
   },
   {
     "title": "Strategic Opportunity During (Ukraine) War",
@@ -631,7 +653,7 @@ international_events = [
     "title": "Autonomous Materials Discovery Alliance",
     "description": "Cross-border AI research in materials science accelerates catalyst design and superconductors.",
     "delta_models": "round(1.4 * int(Joint_Project == 'Materials') + 0.3 * Shared_Research_Centers)",
-    "delta_papers": "round(9 * int(Joint_Project == 'Materials') + 0.3 * AI_Investment_Focus)"
+    "delta_papers": "round(9 * int(Joint_Project == 'Materials') + 0.3 * AI_Fund)"
   },
   {
     "title": "Space-AI Interoperability Program",
@@ -655,7 +677,7 @@ international_events = [
     "title": "Private Investment in Multinational AI Projects",
     "description": "Joint project countries attract significant private AI R&D funding.",
     "delta_models": "round(1.5 * int(Joint_Project != 'No') + 0.2 * Deployment_Infrastructure)",
-    "delta_papers": "round(10 * int(Joint_Project != 'No') + 0.3 * AI_Investment_Focus)"
+    "delta_papers": "round(10 * int(Joint_Project != 'No') + 0.3 * AI_Fund)"
   },
   {
     "title": "Cloud Standardization Agreement",
@@ -756,7 +778,7 @@ international_events = [
   {
     "title": "Emergence of a Synthetic Scientist",
     "description": "An open-source project accidentally creates a self-improving AI that begins publishing novel scientific papers. The public and government are stunned. Some call it the next Newton. Others call it a threat.",
-    "delta_models": "round(3 * min(1, max(0, (Open_Source_Adoption + Talent_Index + AI_Investment_Focus - 27) / 6)))",
+    "delta_models": "round(3 * min(1, max(0, (Open_Source_Adoption + Talent_Index + AI_Fund - 27) / 6)))",
     "delta_papers": "round(40 * min(1, max(0, (AI_Literacy_Education + IP_Protection_Strength + Democratic_Stability_Index - 27) / 6))) - 10 * int(Dual_Use_Restriction_Strictness > 7)"
   }  
 ]
