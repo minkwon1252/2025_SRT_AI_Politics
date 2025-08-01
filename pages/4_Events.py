@@ -3,33 +3,38 @@ import streamlit as st
 import random
 import json
 import time
-import math
-import numpy as np
 import config
 import utils
-import os # For checking file existence
+import os
 
 st.set_page_config(layout="centered", page_title="Event Phase")
 
-# --- 로그인 확인 ---
+# --- 0. 로그인 및 기본 설정 ---
 if not st.session_state.get("authenticated_team"):
     st.error("Please log in first.")
-    st.switch_page("pages/0_Login.py")
+    st.switch_page("pages/0_Login.py") # 사용자의 시작 페이지에 맞게 수정
 
 team = st.session_state.get("authenticated_team")
 
-# --- 페이지 상태 초기화 ---
-# 이 페이지에서 사용할 세션 상태 변수들을 초기화합니다.
-if "rolling" not in st.session_state:
-    st.session_state.rolling = False
-if "event_result" not in st.session_state:
-    st.session_state.event_result = None
-if "event_shown" not in st.session_state:
-    st.session_state.event_shown = False
-if "intel_shown" not in st.session_state:
-    st.session_state.intel_shown = False
-if "adjustment_confirmed" not in st.session_state:
-    st.session_state.adjustment_confirmed = False
+# --- [핵심 수정] '단계(Phase)' 기반 상태 초기화 ---
+# 이 페이지의 진행 상태를 단 하나의 변수로 관리합니다.
+if "event_phase" not in st.session_state:
+    st.session_state.event_phase = "roulette" # 초기 단계는 'roulette'
+
+# 디버깅용 리셋 버튼 (필요 시 사이드바에서 사용)
+if st.sidebar.button("⚠️ Reset Event Page State"):
+    # 이 페이지에서 사용하는 모든 상태 변수를 삭제하여 처음부터 다시 시작
+    keys_to_reset = [
+        "event_phase", "is_rolling", "event_result", "event_title", "event_description",
+        "intel_step1_result_value", "intel_result_step2", "intel_result_step3", "intel_result_step4",
+        "intel_shown_step2", "intel_shown_step3", "intel_shown_step4",
+        "international_event_generated_4events", "international_events_display"
+    ]
+    for key in keys_to_reset:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.toast("Event page state has been reset!")
+    st.rerun()
 
 st.title("🌏 Event Phase")
 st.markdown("""
@@ -41,87 +46,76 @@ Now, it's time to discover what has happened within your borders...
 st.markdown("---")
 
 
-# --- 1. Domestic Event Roulette ---
-st.header("🎲 Domestic Event Roulette")
-
-# Domestic 이벤트가 아직 결정되지 않았을 때만 룰렛을 표시합니다.
-if not st.session_state.event_shown:
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("▶️ Start Roulette"):
-            st.session_state.rolling = True
-            st.session_state.event_result = None
-
-    with col2:
-        if st.button("⏹ Stop"):
-            st.session_state.rolling = False
-            # config에서 domestic_events를 가져와 사용합니다.
-            st.session_state.event_result = random.randint(1, len(config.domestic_events))
-            st.session_state.stop_time = time.time()
-
-    if st.session_state.rolling:
-        placeholder = st.empty()
-        # 룰렛 애니메이션은 사용자가 멈출 때까지 계속됩니다.
-        # time.sleep을 사용하면 다른 상호작용이 멈추므로, 간단한 숫자로 대체합니다.
-        n = random.randint(1, 100)
-        placeholder.markdown(f"### 🔄 Your nation's fate awaits. Press 'Stop' when you're ready. **{n}**")
-        st.rerun() # 부드러운 애니메이션 효과를 위해 rerun 사용
-
-# 이벤트 결과가 있으면 표시합니다.
-if st.session_state.event_result:
-    # 이벤트 정보를 한 번만 처리하여 session_state에 저장합니다.
-    if not st.session_state.event_shown:
-        eid = st.session_state.event_result
-        event = config.domestic_events.get(eid, {"title": "Unknown", "description": "N/A"})
-        
-        # --- MODIFICATION START: Add new domestic event to existing JSON file ---
-        domestic_event_file_path = config.shared_dir / f"domestic_{team}.json"
-        existing_domestic_events = []
-        if os.path.exists(domestic_event_file_path):
-            try:
-                with open(domestic_event_file_path, "r") as f:
-                    existing_domestic_events = json.load(f)
-                    if not isinstance(existing_domestic_events, list): # Ensure it's a list
-                        existing_domestic_events = []
-            except json.JSONDecodeError:
-                existing_domestic_events = [] # Handle empty or malformed JSON
-        
-        existing_domestic_events.append(event) # Add the new event to the list
-
-        with open(domestic_event_file_path, "w") as f:
-            json.dump(existing_domestic_events, f) # Save the updated list
-        # --- MODIFICATION END ---
-
-        st.session_state["event_title"] = event["title"]
-        st.session_state["event_description"] = event["description"]
-        
-        st.session_state.event_shown = True
-        st.rerun() # 상태 저장 후 UI를 새로고침
-
-    # 저장된 이벤트 정보를 항상 표시합니다.
-    st.markdown(f"### 📍 Domestic Event: **{st.session_state['event_title']}**")
-    st.markdown(f"📖 {st.session_state['event_description']}")
-
-
-# --- 2. Intelligence Insight Phase ---
-if st.session_state.event_shown: # 국내 이벤트가 확정된 후에만 정보전 단계 표시
-    st.markdown("---")
-    st.header("🕵️ Intelligence Briefing")
+# --- 1. 국내 이벤트 룰렛 단계 ---
+if st.session_state.event_phase == "roulette":
+    st.header("🎲 Domestic Event Roulette")
     
-    agency_name = config.intel_agencies.get(team, "your national intelligence agency")
-    st.markdown(f"""
-Operatives from the **{agency_name}** have returned with highly classified intel on the AI priorities and strategic moves of rival nations.  
-This information was obtained through covert channels—impossible to access via diplomacy or trade.
+    # 이벤트 결과가 정해지면 결과를 보여주고 다음 단계로 가는 버튼을 표시
+    if "event_result" in st.session_state:
+        st.markdown(f"### 📍 Domestic Event: **{st.session_state.get('event_title', 'N/A')}**")
+        st.markdown(f"📖 {st.session_state.get('event_description', 'N/A')}")
+        st.markdown("---")
+        if st.button("Proceed to Intelligence Briefing", type="primary"):
+            st.session_state.event_phase = "intelligence"
+            st.rerun()
+    # 이벤트 결과가 없으면 룰렛 버튼을 표시
+    else:
+        is_rolling = st.session_state.get("is_rolling", False)
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("▶️ Start Roulette", disabled=is_rolling):
+                st.session_state.is_rolling = True
+                st.rerun()
+        with col2:
+            if st.button("⏹ Stop", disabled=not is_rolling):
+                st.session_state.is_rolling = False
+                
+                # 1. 'event' 변수 정의
+                eid = random.randint(1, len(config.domestic_events))
+                event = config.domestic_events.get(eid, {"title": "Unknown", "description": "N/A"})
+                
+                # 2. domestic_{team}.json 파일에 이벤트 결과 추가 (올바른 위치)
+                domestic_event_file_path = config.shared_dir / f"domestic_{team}.json"
+                existing_events = []
+                if os.path.exists(domestic_event_file_path):
+                    try:
+                        with open(domestic_event_file_path, "r") as f:
+                            content = json.load(f)
+                            if isinstance(content, list):
+                                existing_events = content
+                            else: 
+                                existing_events = [content]
+                    except (json.JSONDecodeError, FileNotFoundError):
+                        pass
+                
+                existing_events.append(event)
 
-What lies before you is a rare glimpse behind the curtain.  
-Interpret it wisely, and your nation could outmaneuver its competitors in both global cooperation and technological supremacy.
+                with open(domestic_event_file_path, "w") as f:
+                    json.dump(existing_events, f)
 
-> *"We need reliable intelligence, and we need it now..."* > — **Alan Hunley**, *Mission: Impossible – Rogue Nation*
-""", unsafe_allow_html=True)
+                # 4. 세션 상태에 결과 저장 및 페이지 새로고침
+                st.session_state["event_result"] = eid
+                st.session_state["event_title"] = event["title"]
+                st.session_state["event_description"] = event["description"]
+                st.rerun()
+
+        if is_rolling:
+            st.markdown(f"### 🔄 Rolling... **{random.randint(1, 100)}**")
+            time.sleep(0.1)
+            st.rerun()
+
+# --- 2. 정보전 브리핑 단계 ---
+elif st.session_state.event_phase == "intelligence":
+    st.header("🕵️ Intelligence Briefing")
+    st.markdown("""
+    Operatives from the **...** have returned with highly classified intel...
+    > *"We need reliable intelligence, and we need it now..."*
+    """, unsafe_allow_html=True) # 설명 부분 생략
 
     intel_score = st.session_state.get(f"hidden_params_Intelligence", 5)
     pool = [c for c in config.team_credentials if c != team]
     
+    # --- 각 정보 단계 UI ---
     # ✅ 1️⃣ 최초 1회 고정
     if "intel_step1_result_value" not in st.session_state:
         rand_country = random.choice(pool)
@@ -212,7 +206,10 @@ Interpret it wisely, and your nation could outmaneuver its competitors in both g
     # 4️⃣ 선택 국가 specific hidden
     if intel_score >= 9:
         sel4 = st.selectbox("4️⃣ Choose a country for specific hidden intel", pool, key="country_step4", disabled=st.session_state.get("intel_shown_step4", False))
+        # 파일을 버튼 누르기 전에 미리 열면, 상대가 저장 안했을 때 에러 발생. 버튼 안으로 이동.
         
+        # 임시로 h4 키 목록을 보여주기 위한 처리
+        # 실제로는 이 방식보다 더 나은 UI가 필요할 수 있음
         param_list = list(config.parameter_groups.keys()) # 예시 목록
         
         hidden_key = st.selectbox("Select hidden parameter", list(config.parameter_descriptions.keys()), key="hidden_step4", disabled=st.session_state.get("intel_shown_step4", False))
@@ -232,117 +229,122 @@ Interpret it wisely, and your nation could outmaneuver its competitors in both g
         if st.session_state.get("intel_shown_step4"):
             st.success(st.session_state.get("intel_result_step4"))
 
-    # 모든 정보 확인이 끝나면 다음 단계로 넘어갈 수 있도록 플래그 설정
-    all_steps_done = (intel_score < 2 or st.session_state.get("intel_shown_step2", False)) and \
-                     (intel_score < 6 or st.session_state.get("intel_shown_step3", False)) and \
-                     (intel_score < 9 or st.session_state.get("intel_shown_step4", False))
+    # 모든 정보 확인이 끝났는지 체크
+    all_intel_revealed = (intel_score < 2 or st.session_state.get("intel_shown_step2", False)) and \
+                         (intel_score < 6 or st.session_state.get("intel_shown_step3", False)) and \
+                         (intel_score < 9 or st.session_state.get("intel_shown_step4", False))
 
-    if all_steps_done and not st.session_state.get("intel_shown", False):
-        st.session_state["intel_shown"] = True
-        st.rerun()
-
-# --- 3. Final Policy Adjustment ---
-if st.session_state.intel_shown and not st.session_state.adjustment_confirmed:
     st.markdown("---")
+    if not all_intel_revealed:
+        st.info("💡 Please reveal all available intel steps above to continue.")
+    else:
+        if st.button("Proceed to Final Policy Adjustment", type="primary"):
+            st.session_state.event_phase = "adjustment"
+            st.rerun()
+
+# --- 3. 최종 정책 조정 단계 ---
+elif st.session_state.event_phase == "adjustment":
     st.header("🛠️ Final Policy Adjustment")
 
-    # Ensure hidden_params are initialized if they haven't been (e.g., first run or previous page skipped)
-    if not any(k.startswith("hidden_params_") for k in st.session_state):
-        try:
-            with open(config.shared_dir / f"hidden_{team}.json", "r") as f:
-                initial_hidden_params = json.load(f)
-                for k, v in initial_hidden_params.items():
-                    st.session_state[f"hidden_params_{k}"] = v
-        except FileNotFoundError:
-            st.warning("No initial hidden parameters found. Initializing with defaults for adjustment phase.")
-            for group in config.parameter_groups.values():
-                for param in group:
-                    if f"hidden_params_{param}" not in st.session_state:
-                        st.session_state[f"hidden_params_{param}"] = 5 # Default value
-
-    used_points = sum([v for k, v in st.session_state.items() if k.startswith("hidden_params_") and isinstance(v, (int, float))])
-    # Total policy points, adjust based on your game's design
-    total_policy_points_available = 100 
-    remaining = total_policy_points_available - used_points
+    # 사용 가능한 포인트 계산
+    used_points = sum(v for k, v in st.session_state.items() if k.startswith("hidden_params_") and k != "hidden_params_Alignment_China" and isinstance(v, (int, float)))
+    remaining = 100 - used_points
 
     if remaining <= 0:
-        st.info("✅ You used all your policy points. No adjustments possible.")
-        st.session_state.adjustment_confirmed = True # 조정 불가 시 바로 확정 처리
-        st.rerun()
+        st.info("✅ You have no remaining policy points for adjustment.")
+        if st.button("Proceed to International Events"):
+            st.session_state.event_phase = "international"
+            st.rerun()
     else:
         st.markdown(f"**💻 Remaining Points: `{remaining}` | Max Usable: `{min(5, remaining)}` | Only one parameter adjustable**")
         all_params = [p for group in config.parameter_groups.values() for p in group if p not in ["Alignment_China"]]
         
         selected_param = st.selectbox("Choose ONE parameter to adjust", all_params, key="adjust_select")
+        
+        # st.session_state에서 현재 값을 가져올 때 접두사를 포함해야 합니다.
         current_val = st.session_state.get(f"hidden_params_{selected_param}", 0)
 
-        # Determine range based on rules
         delta_cap = min(5, remaining)
         max_val = min(10, current_val + delta_cap)
         min_val = max(0, current_val - delta_cap)
 
-        # Special case for Alignment_US/China
+        # 조정 UI 표시
         if selected_param == "Alignment_US":
-            current_cn = st.session_state.get("hidden_params_Alignment_China", 0)
             new_val = st.slider("New Alignment_US value", 0, 10, current_val)
             new_cn = 10 - new_val
             st.markdown(f"➡️ Alignment_China will automatically adjust to: `{new_cn}`")
         else:
             new_val = st.slider(f"New value for {selected_param}", min_val, max_val, current_val)
 
+        # --- [채워진 부분] 저장 로직 ---
         if st.button("✅ Confirm Final Adjustment"):
+            # 1. 세션 상태에 새로운 값 업데이트
             st.session_state[f"hidden_params_{selected_param}"] = new_val
             if selected_param == "Alignment_US":
                 st.session_state["hidden_params_Alignment_China"] = 10 - new_val
             
-            # Save the updated hidden parameters to the file
-            updated_hidden_params = {k.replace("hidden_params_", ""): v for k, v in st.session_state.items() if k.startswith("hidden_params_")}
-            with open(config.shared_dir / f"hidden_{team}.json", "w") as f:
-                json.dump(updated_hidden_params, f)
+            # 2. 파일에 저장하기 위해 모든 hidden_params 값을 딕셔너리로 준비
+            updated_hidden_params = {
+                k.replace("hidden_params_", ""): v 
+                for k, v in st.session_state.items() 
+                if k.startswith("hidden_params_")
+            }
 
-            st.session_state.adjustment_confirmed = True
-            st.success("✅ Adjustment saved. This concludes your policy modification for this round.")
+            # 3. 다음 단계로 상태 전환
+            st.session_state.event_phase = "international"
+            
+            # 4. 사용자에게 피드백 후 페이지 새로고침
+            st.success("✅ Adjustment saved. Proceeding to International Events.")
             time.sleep(1)
             st.rerun()
 
-# --- 4. Transition to Summary (International Events) ---
-if st.session_state.adjustment_confirmed:
+# --- 4. 국제 이벤트 및 요약 단계로 이동 ---
+elif st.session_state.event_phase == "international":
     st.markdown("---")
     st.header("📍 International Events")
     st.markdown("While domestic reforms were unfolding, a new wave of **international events** emerged...")
 
-    international_event_file = config.shared_dir / "international.json"
-    current_international_events = []
+    # 국제 이벤트 생성 및 파일 저장 로직
+    if "international_events" not in st.session_state:
+        event_file = config.shared_dir / "international.json"
+        chosen_events = []
 
-    # Load existing international events if the file exists
-    if os.path.exists(international_event_file):
-        try:
-            with open(international_event_file, "r") as f:
-                current_international_events = json.load(f)
-                if not isinstance(current_international_events, list): # Ensure it's a list
-                    current_international_events = []
-        except json.JSONDecodeError:
-            current_international_events = [] # Handle empty or malformed JSON
+        # 1. 파일이 이미 존재하는지 확인하고, 내용을 읽어옵니다.
+        if event_file.exists():
+            try:
+                with open(event_file, "r") as f:
+                    chosen_events = json.load(f)
+            except json.JSONDecodeError:
+                chosen_events = []
 
-    # Generate and add a new international event only once per session for this page
-    if not st.session_state.get("international_event_generated_4events", False): # Use a distinct session key
-        # Pick one random international event
-        new_event = random.sample(config.international_events, 1)[0]
-        current_international_events.append(new_event) # Add the new event to the list
-        
-        # Save the updated list of international events to the file
-        with open(international_event_file, "w") as f:
-            json.dump(current_international_events, f)
-        
-        st.session_state["international_events_display"] = current_international_events # Use a display key
-        st.session_state.international_event_generated_4events = True # Mark as generated
-        st.write("A new international event has been added to the log!")
-        st.rerun() # Rerun to display the newly added event
+        # 2. 이벤트 개수를 확인하고, 2개 미만이면 새로 추가합니다.
+        if len(chosen_events) < 2:
+            # 다른 팀이 i1만 생성한 경우, i2를 여기서 생성합니다.
+            st.write("Your team triggered the second international event!")
+            
+            # 이미 존재하는 이벤트와 겹치지 않게 새 이벤트 1개를 샘플링합니다.
+            existing_titles = {e['title'] for e in chosen_events}
+            possible_new_events = [e for e in config.international_events if e['title'] not in existing_titles]
+            
+            if possible_new_events:
+                new_event = random.sample(possible_new_events, 1)
+                chosen_events.extend(new_event)
+            
+                # 업데이트된 이벤트 목록을 파일에 다시 씁니다.
+                with open(event_file, "w") as f:
+                    json.dump(chosen_events, f)
+        else:
+            st.write("Two international events have already been determined by other teams.")
 
-    # Display all international events (current and newly added)
+        # 결정된 이벤트를 현재 세션에 저장합니다.
+        st.session_state["international_events"] = chosen_events
+    # --- 로직 수정 끝 ---
+
+
+    # 이제 모든 플레이어는 동일한 st.session_state.international_events를 갖게 됩니다.
     with st.expander("🗺️ View International Events", expanded=True):
-        if "international_events_display" in st.session_state: # Use the display key
-            for i, event in enumerate(st.session_state["international_events_display"], 1):
+        if "international_events" in st.session_state:
+            for i, event in enumerate(st.session_state.international_events, 1):
                 st.markdown(f"#### 💥 Event {i}: {event['title']}\n\n{event['description']}")
         else:
             st.warning("International events are being determined...")

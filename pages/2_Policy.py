@@ -22,7 +22,7 @@ st.markdown("""
 .big-caption { font-size: 17px !important; color: black !important; line-height: 1.6; margin-bottom: 1em; }
 </style>
 <div class='big-caption'>
-    In this stage, you will define the <b>overall direction of your country's AI policy</b>. Your choices will directly influence the growth of notable academic papers—like <i>“Attention is All You Need”</i>—which in turn accelerates the emergence of groundbreaking AI models such as ChatGPT or DeepSeek.
+    In this stage, you will define the <b>overall direction of your country's AI policy</b>. Your choices will directly influence the growth of notable academic papers which in turn accelerates the emergence of groundbreaking AI models such as ChatGPT or DeepSeek.
     <br><br>
     Each parameter belongs to a different policy category such as technical support, education, culture, stance, and diplomacy. You must allocate your 100 policy points across these options.
     <br><br>

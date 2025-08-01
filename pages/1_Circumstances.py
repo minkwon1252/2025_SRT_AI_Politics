@@ -89,8 +89,7 @@ if st.session_state.domestic_event_shown:
     # Policy Recommendations in an expander
     with st.expander("📂 View Policy Recommendations from Domestic Event"):
         st.markdown("""
-        Based on the domestic event that has occurred, here are some key policy areas that might be particularly
-        relevant for your nation's AI development. **Please note that these are only some of the many factors involved in this event.**
+        Based on the domestic event that has occurred, these are **some of the many factors** that are relevant for your nation's AI development.
         """)
 
         # Extract parameters from formulas
@@ -122,8 +121,6 @@ if st.session_state.domestic_event_shown:
                 st.subheader(f"💡 {param_name}")
                 if param_name in config.parameter_descriptions:
                     st.markdown(f"**Brief Description**: {config.parameter_descriptions[param_name]}")
-                if param_name in config.parameter_insights:
-                    st.markdown(f"**Insight**: {config.parameter_insights[param_name]}")
                 st.markdown("---")
         else:
             st.info("No specific policy recommendations could be derived from this event's formulas.")

@@ -311,20 +311,43 @@ with tab2:
 # 발생한 이벤트 목록
 st.markdown("---")
 st.header("🔔 Events This Round")
-with st.expander(f"🏠 Domestic Event in {my_team}"):
+
+# Domestic Events Display
+with st.expander(f"🏠 Domestic Events in {my_team}"):
     try:
         domestic_event_file_path = config.shared_dir / f"domestic_{my_team}.json"
         if os.path.exists(domestic_event_file_path):
             with open(domestic_event_file_path, "r") as f:
                 all_domestic_events = json.load(f)
-                latest_domestic_event = all_domestic_events[-1] if isinstance(all_domestic_events, list) else all_domestic_events
-                if latest_domestic_event:
-                    st.markdown(f"**{latest_domestic_event.get('title', 'N/A')}**")
-                    st.write(latest_domestic_event.get('description', 'N/A'))
+                if isinstance(all_domestic_events, list) and all_domestic_events:
+                    for i, event in enumerate(all_domestic_events, 1):
+                        st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
+                        st.write(event.get('description', 'N/A'))
+                        st.markdown("---")
+                elif all_domestic_events: # 단일 이벤트인 경우
+                     st.markdown(f"**{all_domestic_events.get('title', 'N/A')}**")
+                     st.write(all_domestic_events.get('description', 'N/A'))
         else:
-            st.info(f"No domestic event occurred for {my_team} this round.")
+            st.info(f"No domestic events occurred for {my_team} this round.")
     except Exception as e:
-        st.error(f"An error occurred while loading your domestic event: {e}")
+        st.error(f"An error occurred while loading your domestic events: {e}")
+
+# International Events Display
+with st.expander("🌍 International Events"):
+    try:
+        international_event_file = config.shared_dir / "international.json"
+        if os.path.exists(international_event_file):
+            with open(international_event_file, "r") as f:
+                all_international_events = json.load(f)
+                if all_international_events:
+                    for i, event in enumerate(all_international_events, 1):
+                        st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
+                        st.write(event.get('description', 'N/A'))
+                        st.markdown("---")
+        else:
+            st.info("No international events occurred this round.")
+    except Exception as e:
+        st.error(f"An error occurred while loading international events: {e}")
 
 # 인용구 및 다음 라운드 버튼
 st.markdown("---")
@@ -343,9 +366,10 @@ if st.button("🚀 Start Next Round", type="primary"):
     st.toast("Clearing data for the new round...")
     files_to_clear = [config.shared_dir / "international.json"]
     
-    #for country_name in all_player_teams:
-        #files_to_clear.append(config.shared_dir / f"domestic_{country_name}.json")
-        #files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
+    # domestic 파일과 cooperation 파일을 모두 삭제하도록 주석 해제
+    for country_name in all_player_teams:
+        files_to_clear.append(config.shared_dir / f"domestic_{country_name}.json")
+        files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
     
     for f in files_to_clear:
         if f.exists():
@@ -353,12 +377,15 @@ if st.button("🚀 Start Next Round", type="primary"):
 
     keys_to_clear_from_session = [
         "growth_rate", "cooperation_state", "cooperation_confirmed",
-        # 필요에 따라 다른 라운드별 세션 상태 키 추가
+        # 1_Circumstances, 4_Events 페이지의 세션 상태 초기화
+        "domestic_event_shown", "international_event_shown", 
+        "event_phase", "is_rolling", "event_result", 
+        "international_events_1_circumstance", "international_events"
     ]
     for key in keys_to_clear_from_session:
         if key in st.session_state:
             del st.session_state[key]
             
-    st.success("Starting new round... Navigating to Policy Phase!")
+    st.success("Starting new round... Navigating to Circumstances Phase!")
     time.sleep(2)
     st.switch_page("pages/1_Circumstances.py")
