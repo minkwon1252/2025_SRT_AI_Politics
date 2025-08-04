@@ -14,6 +14,10 @@ u = 84.17
 threshold = 40 * u / 19
 
 def calculate_ai_models(paper_count, normalize_to=15, reference_variance=2000):
+    
+    if paper_count <= 0:
+        return 0
+        
     std_dev = np.sqrt(paper_count)
     z_score = (threshold - u) / std_dev
     probability = 1 - norm.cdf(z_score)
@@ -69,12 +73,26 @@ def evaluate_delta(expr: str, params: dict) -> int:
         return 0
 
 def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> int:
+    # --- 디버깅 코드 시작 ---
+    st.warning(f"--- 🕵️ 디버깅 시작: 국제 이벤트 계산 ---")
+    st.write(f"**계산 공식:** `{expr}`")
+    
     total = 0
     for country, bilateral_raw in coop_dict.items():
         bilateral = process_coop_params(bilateral_raw)
         combined = {**hidden, **bilateral}
-        total += evaluate_delta(expr, combined)
+        delta_for_partner = evaluate_delta(expr, combined)
+        
+        # 각 파트너별 계산 결과를 화면에 출력
+        st.write(f"- 파트너 **{country}**에 공식 적용 결과: **`{delta_for_partner}`**")
+        
+        total += delta_for_partner
+        
+    st.write(f"**➡️ 이 공식의 최종 합산 결과: `{total}`**")
+    st.warning("--- 🕵️ 디버깅 종료 ---")
+    # --- 디버깅 코드 종료 ---
     return total
+
 
 def category_to_multiplier(val, mapping):
     return mapping.get(str(val).strip(), 1.0)
@@ -264,13 +282,12 @@ def get_coop_info(param, true_val, intel_score, options=None):
 # --- Summary Page Helper Functions ---
 def calculate_round_results(team_name, initial_papers, initial_models, growth_rate, hidden_params, coop_params_raw):
     """
-    한 팀의 라운드 결과를 계산합니다. (국내 및 국제 이벤트 모두 반영)
+    한 팀의 라운드 결과를 계산합니다. (이벤트별 상세 델타 포함)
     """
-    delta_paper_domestic = 0
-    delta_model_domestic = 0
-    delta_paper_international = 0
-    delta_model_international = 0
-    
+    # 상세 내역을 저장할 리스트 초기화
+    domestic_deltas = []
+    international_deltas = []
+
     # 평가에 필요한 파라미터들 병합
     team_fixed_values = config.fixed_values.get(team_name, {})
     evaluation_params = {**team_fixed_values, **hidden_params}
@@ -283,22 +300,21 @@ def calculate_round_results(team_name, initial_papers, initial_models, growth_ra
     if "Natural_Resource_Reserves" in evaluation_params and "Resource_value" not in evaluation_params:
          evaluation_params["Resource_value"] = nat_resource_map.get(evaluation_params["Natural_Resource_Reserves"], 0)
 
-    # 국내 이벤트 처리 (파일의 모든 이벤트를 누적)
+    # 국내 이벤트 처리
     domestic_event_file_path = config.shared_dir / f"domestic_{team_name}.json"
     if os.path.exists(domestic_event_file_path):
         try:
             with open(domestic_event_file_path, "r") as f:
                 all_domestic_events = json.load(f)
-                if isinstance(all_domestic_events, list):
-                    for event in all_domestic_events:
-                        delta_paper_domestic += evaluate_delta(event.get("delta_papers", "0"), evaluation_params)
-                        delta_model_domestic += evaluate_delta(event.get("delta_models", "0"), evaluation_params)
-                else: # 단일 이벤트인 경우 (하위 호환)
-                    delta_paper_domestic += evaluate_delta(all_domestic_events.get("delta_papers", "0"), evaluation_params)
-                    delta_model_domestic += evaluate_delta(all_domestic_events.get("delta_models", "0"), evaluation_params)
-
-        except (json.JSONDecodeError, IndexError) as e:
-            st.warning(f"Could not process domestic event file for {team_name}: {e}")
+                if not isinstance(all_domestic_events, list):
+                    all_domestic_events = [all_domestic_events] # 리스트가 아니면 리스트로 만듦
+            
+            for event in all_domestic_events:
+                paper_d = evaluate_delta(event.get("delta_papers", "0"), evaluation_params)
+                model_d = evaluate_delta(event.get("delta_models", "0"), evaluation_params)
+                domestic_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
+        except (json.JSONDecodeError, IndexError):
+            pass
 
     # 국제 이벤트 처리
     international_event_file = config.shared_dir / "international.json"
@@ -306,36 +322,30 @@ def calculate_round_results(team_name, initial_papers, initial_models, growth_ra
         try:
             with open(international_event_file, "r") as f:
                 all_international_events = json.load(f)
-            
+
             for event in all_international_events:
-                # 국제 이벤트는 각 파트너와의 협력 관계에 따라 효과가 달라지므로 evaluate_event_international 사용
-                delta_paper_international += evaluate_event_international(event.get("delta_papers", "0"), evaluation_params, coop_params_raw)
-                delta_model_international += evaluate_event_international(event.get("delta_models", "0"), evaluation_params, coop_params_raw)
+                paper_d = evaluate_event_international(event.get("delta_papers", "0"), evaluation_params, coop_params_raw)
+                model_d = evaluate_event_international(event.get("delta_models", "0"), evaluation_params, coop_params_raw)
+                international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
+        except (json.JSONDecodeError, IndexError):
+            pass
 
-        except (json.JSONDecodeError, IndexError) as e:
-            st.warning(f"Could not process international event file: {e}")
-
-
-    # 최종 점수 계산
-    total_paper_delta = growth_rate + delta_paper_domestic + delta_paper_international
-    final_papers = initial_papers + total_paper_delta
-    final_papers = max(0, final_papers)
+    # 전체 델타 합산
+    total_paper_delta = growth_rate + sum(d['paper_delta'] for d in domestic_deltas) + sum(d['paper_delta'] for d in international_deltas)
+    final_papers = max(0, initial_papers + total_paper_delta)
 
     new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
     
-    total_model_delta = new_models_from_papers + delta_model_domestic + delta_model_international
-    final_models = initial_models + total_model_delta
-    final_models = max(0.0, final_models)
-
-    # 상세 내역 딕셔너리
+    total_model_delta = new_models_from_papers + sum(d['model_delta'] for d in domestic_deltas) + sum(d['model_delta'] for d in international_deltas)
+    final_models = max(0.0, initial_models + total_model_delta)
+    
+    # 반환할 상세 내역 딕셔너리 구조 변경
     delta_details = {
         'base_growth': growth_rate,
-        'domestic_paper': delta_paper_domestic,
-        'international_paper': delta_paper_international,
+        'domestic_deltas': domestic_deltas,
+        'international_deltas': international_deltas,
         'total_paper_delta': total_paper_delta,
         'from_papers_model': new_models_from_papers,
-        'domestic_model': delta_model_domestic,
-        'international_model': delta_model_international,
         'total_model_delta': total_model_delta
     }
     

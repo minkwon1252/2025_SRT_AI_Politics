@@ -240,7 +240,7 @@ domestic_events = {
         "title": "Technical Standards Fragmentation",
         "description": "Lack of unified national guidelines causes inefficiencies in AI toolchain development, leading to compatibility issues and duplicated efforts. When Open_Source_Adoption is low and IP_Protection_Strength is weak, organizations struggle to align on shared frameworks. Real-world examples include early-stage AI policy gaps in the EU, where inconsistent standards across member states slowed integration of AI tools across borders and industries.",
         "delta_models": "-2.1 * (1 - Open_Source_Adoption / 10)",
-        "delta_papers": "-7 * (1 if IP_Protection_Strength < 6- else 0.5)"
+        "delta_papers": "-7 * (1 if IP_Protection_Strength < 6 else 0.5)"
     },
     16: {
         "title": "AI-Phobia Media Coverage Surge",
@@ -482,6 +482,35 @@ domestic_events = {
         "delta_models": "round(2.0 * (Electricity + Open_Source_Adoption) / 20)",
         "delta_papers": "round(7 * (Talent_Index + AI_Fund) / 20)"
     },
+    56: {
+        "title": "AI-Driven Public Service Optimization",
+        "description": "Core AI services are handed over to private monopolies. Countries with strong AI_Fund and Open_Source_Adoption see faster model development, while those with high IP_Protection_Strength and Democratic_Stability_Index benefit from more efficient and transparent research. In the United States, partnerships between government agencies and private firms like Palantir and Google have optimized public services through AI, improving everything from traffic management to healthcare delivery while boosting academic research on applied AI.",
+        "delta_models": "round((AI_Fund + Open_Source_Adoption/2) / 2)",
+        "delta_papers": "round(5 * (IP_Protection_Strength + Democratic_Stability_Index) / 20)",
+    },
+    57: {
+        "title": "National AI Patent Gold Rush",
+        "description": "Sudden increase in filings; may signal innovation or defensive bureaucracy. Countries with strong IP_Protection_Strength and Open_Source_Adoption benefit in model development, while those with high Talent_Index and Education_Investment see more research output. In the United States, the surge in AI-related patents—especially in natural language processing and computer vision—has led to both innovation and legal challenges, driving academic research on intellectual property and AI ethics.",
+        "delta_models": "round( (IP_Protection_Strength - 5) * (Open_Source_Adoption - 5) / 12)",
+        "delta_papers": "round(3 * (Talent_Index - 5) * (Education_Investment -5)/ 5)",
+    },
+    58: {
+        "title": "National AI Governance Bill Passes Suddenly",
+        "description": "Sudden increase in filings; may signal innovation or defensive bureaucracy. Balance between Dual_Use_Restriction_Strictness and Open_Source_Adoption is crucial.",
+        "delta_models": "round(-2 * (Dual_Use_Restriction_Strictness - Open_Source_Adoption) / 10)",
+        "delta_papers": "round(7 * (Democratic_Stability_Index + Education_Investment - 14) / 10)",
+    },
+    59: {
+        "title": "Monopoly in AI Certification System",
+        "description": "A dominant firm lobbies to become the sole certifier for “safe” AI models — sparking both standardization and controversy. Balance between IP_Protection_Strength and Open_Source_Adoption is crucial.",
+        "delta_papers": "round(-6 * (10 - Democratic_Stability_Index) / 10)",
+    },
+    60: {
+        "title": "Minimum Wage Raise",
+        "description": "Minimum wage is raised, boosting researcher salaries but increasing costs for AI companies. You need more money.",
+        "delta_models": "round((AI_Fund - 5) * Labor /2)",
+        "delta_papers": "round(2 * (AI_Fund - 5) * Labor)"
+    },
 }
 
 # -------------------------------------------------------------
@@ -492,25 +521,20 @@ international_events = [
   {
     "title": "Theoretical Breakthrough in Algorithms",
     "description": "A new learning paradigm boosts efficiency and capability.",
-    "delta_models": "round(1.5 * Data_Shared + 0.5 * int(Joint_Research_Project != 'None') + 0.2 * log(1 + Open_Source_Adoption))",
-    "delta_papers": "round(10 * Data_Shared + 5 * int(Joint_Research_Project != 'None') + 0.4 * Open_Source_Adoption)"
+    "delta_models": "int(Joint_Research_Project is not None)",
+    "delta_papers": "5 * int(Joint_Research_Project == 'Military')",
+    "effect_summary": "Data_Shared, Joint_Research_Project, Open_Source_Adoption" 
   },
-    {
-    "title": "Trump",
-    "description": "US-aligned countries with shared compute lose access to critical hardware, while others capitalize.",
-    "delta_models": "round(-2 * int(Emergency_Pact_Semiconductor) * int(Joint_Research_Standard == 'US') + 1.5 * int(Joint_Research_Standard == 'China'))",
-    "delta_papers": "round(-15 * int(Emergency_Pact_Semiconductor) * int(Joint_Research_Standard == 'US') + 10 * int(Joint_Research_Standard == 'China'))"
-  },
-    {
-    "title": "China invades Taiwan",
-    "description": "Countries aligned with China benefit; those aligned with the US and with strict civilian-only AI rules face penalties.",
-    "delta_models": "round(2 * (int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard == 'US')) + 1 * int(Joint_Research_DUR == 'No'))",
-    "delta_papers": "round(10 * (int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard == 'US')) - 5 * int(Joint_Research_DUR == 'Yes'))"
-  },
-
 ]
 
 international_events1 = [
+      {
+    "title": "Theoretical Breakthrough in Algorithms",
+    "description": "A new learning paradigm boosts efficiency and capability.",
+    "delta_models": "round(1.5 * Data_Shared + 0.5 * int(Joint_Research_Project != 'None') + 0.2 * log(1 + Open_Source_Adoption))",
+    "delta_papers": "round(10 * Data_Shared + 5 * int(Joint_Research_Project != 'None') + 0.4 * Open_Source_Adoption)",
+    "effect_summary": "Data_Shared, Joint_Research_Project, Open_Source_Adoption" 
+  },
   {
     "title": "Global Financial Crisis",
     "description": "Economic instability drives nations to prioritize domestic spending, slashing Cooperative projects.",
