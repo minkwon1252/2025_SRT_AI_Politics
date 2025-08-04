@@ -74,8 +74,8 @@ def evaluate_delta(expr: str, params: dict) -> int:
 
 def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> int:
     # --- 디버깅 코드 시작 ---
-    st.warning(f"--- 🕵️ 디버깅 시작: 국제 이벤트 계산 ---")
-    st.write(f"**계산 공식:** `{expr}`")
+    #st.warning(f"--- 🕵️ 디버깅 시작: 국제 이벤트 계산 ---")
+    #st.write(f"**계산 공식:** `{expr}`")
     
     total = 0
     for country, bilateral_raw in coop_dict.items():
@@ -88,8 +88,8 @@ def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> in
         
         total += delta_for_partner
         
-    st.write(f"**➡️ 이 공식의 최종 합산 결과: `{total}`**")
-    st.warning("--- 🕵️ 디버깅 종료 ---")
+    #st.write(f"**➡️ 이 공식의 최종 합산 결과: `{total}`**")
+    #st.warning("--- 🕵️ 디버깅 종료 ---")
     # --- 디버깅 코드 종료 ---
     return total
 
