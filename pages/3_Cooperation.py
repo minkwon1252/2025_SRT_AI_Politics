@@ -354,16 +354,50 @@ if submitted:
 # --- Final confirmation ---
 st.divider()
 if st.button("📥 Confirm All Cooperative Parameters"):
-
-    with open(f"shared_data/cooperation_{team}.json", "w") as f:
-        json.dump(st.session_state.cooperation_state, f)
-    
+    # 1. First, check the point limit
     _, final_used_points = compute_cooperation_details(st.session_state.cooperation_state, partners, config.coop_params, config.coop_param_keys)
     
     if final_used_points > coop_limit:
         st.error(f"❌ Cannot confirm. Total points used ({final_used_points}) exceeds your limit ({coop_limit}).")
     else:
-        st.session_state.cooperation_confirmed = True
-        st.success(f"✅ All agreements confirmed! Used {final_used_points} / {coop_limit} points. Proceeding to event phase...")
-        time.sleep(2)
-        st.switch_page("pages/4_Events.py")
+        # 2. Verify mutual agreements with partners
+        mismatches = []
+        my_coop_state = st.session_state.cooperation_state
+        
+        for partner_name, my_proposal in my_coop_state.items():
+            try:
+                with open(f"shared_data/cooperation_{partner_name}.json", "r") as f:
+                    partner_coop_state = json.load(f)
+                
+                # Get the partner's proposal for my team
+                their_proposal_for_me = partner_coop_state.get(team)
+
+                if not their_proposal_for_me:
+                    mismatches.append(f"⚠️ Could not find cooperation data for you in {partner_name}'s file.")
+                    continue
+
+                # Compare each parameter
+                for param_key, my_value in my_proposal.items():
+                    their_value = their_proposal_for_me.get(param_key)
+                    if my_value != their_value:
+                        mismatches.append(f"❌ Disagreement with {partner_name} on '{param_key}': (You: {my_value} | Them: {their_value})")
+
+            except FileNotFoundError:
+                st.warning(f"ℹ️ Could not verify agreement with {partner_name}. Their file was not found. Proceeding with confirmation.")
+            except Exception as e:
+                st.error(f"Error during verification with {partner_name}: {e}")
+
+        # 3. Final decision
+        if mismatches:
+            st.error("Confirmation failed. The following agreements are not mutual:")
+            for msg in mismatches:
+                st.write(msg)
+        else:
+            # If everything matches, save the file and switch pages
+            with open(f"shared_data/cooperation_{team}.json", "w") as f:
+                json.dump(st.session_state.cooperation_state, f)
+            
+            st.session_state.cooperation_confirmed = True
+            st.success(f"✅ All agreements are mutual! Points used: {final_used_points}/{coop_limit}. Proceeding to the Event Phase...")
+            time.sleep(2)
+            st.switch_page("pages/4_Events.py")

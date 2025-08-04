@@ -119,17 +119,36 @@ with st.expander("🔍 View Detailed Breakdown of Your Growth"):
     details = my_results.get('delta_details', {})
     if details:
         col1, col2 = st.columns(2)
+        
+        # --- 논문 성장 상세 내역 ---
         with col1:
             st.markdown("##### 📄 Paper Growth Details")
-            st.markdown(f"- Base Growth: `{details.get('base_growth', 0)}`")
-            st.markdown(f"- Domestic Event: `{details.get('domestic_paper', 0)}`")
+            st.markdown(f"- **Base Growth**: `{details.get('base_growth', 0)}`")
+            
+            # 국내 이벤트
+            for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
+                st.markdown(f"- Domestic Event {i}: `{event_delta.get('paper_delta', 0)}`")
+            
+            # 국제 이벤트
+            for i, event_delta in enumerate(details.get('international_deltas', []), 1):
+                st.markdown(f"- Intl. Event {i}: `{event_delta.get('paper_delta', 0)}`")
+
             st.markdown(f"**Total: `{int(details.get('total_paper_delta', 0))}`**")
+
+        # --- 모델 성장 상세 내역 ---
         with col2:
             st.markdown("##### 🪄 Model Growth Details")
-            st.markdown(f"- From New Papers: `+{details.get('from_papers_model', 0):.2f}`")
-            st.markdown(f"- Domestic Event: `{details.get('domestic_model', 0)}`")
+            st.markdown(f"- **From New Papers**: `+{details.get('from_papers_model', 0):.2f}`")
+
+            # 국내 이벤트
+            for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
+                st.markdown(f"- Domestic Event {i}: `{event_delta.get('model_delta', 0)}`")
+            
+            # 국제 이벤트
+            for i, event_delta in enumerate(details.get('international_deltas', []), 1):
+                st.markdown(f"- Intl. Event {i}: `{event_delta.get('model_delta', 0):.2f}`")
+
             st.markdown(f"**Total: `{details.get('total_model_delta', 0):.2f}`**")
-st.markdown("---")
 
 # Global AI Superpowers
 st.header("🌍 Global AI Superpowers")
@@ -319,14 +338,30 @@ with st.expander(f"🏠 Domestic Events in {my_team}"):
         if os.path.exists(domestic_event_file_path):
             with open(domestic_event_file_path, "r") as f:
                 all_domestic_events = json.load(f)
-                if isinstance(all_domestic_events, list) and all_domestic_events:
+                if not isinstance(all_domestic_events, list):
+                    all_domestic_events = [all_domestic_events]
+                
+                if all_domestic_events:
                     for i, event in enumerate(all_domestic_events, 1):
                         st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
-                        st.write(event.get('description', 'N/A'))
+                        
+                        # --- 수정된 부분: 첫 문장만 추출 ---
+                        description = event.get('description', 'N/A')
+                        
+                        # 문장 끝을 나타내는 ., ?, ! 중 가장 먼저 나오는 위치를 찾음
+                        end_indices = [idx for idx in [description.find('.'), description.find('?'), description.find('!')] if idx != -1]
+                        
+                        if end_indices:
+                            # 가장 첫 번째 문장 종결 부호까지 잘라냄
+                            first_sentence = description[:min(end_indices) + 1]
+                        else:
+                            # 문장 부호가 없으면 전체를 첫 문장으로 간주
+                            first_sentence = description
+                        
+                        st.write(first_sentence)
                         st.markdown("---")
-                elif all_domestic_events: # 단일 이벤트인 경우
-                     st.markdown(f"**{all_domestic_events.get('title', 'N/A')}**")
-                     st.write(all_domestic_events.get('description', 'N/A'))
+                else:
+                    st.info(f"No domestic events occurred for {my_team} this round.")
         else:
             st.info(f"No domestic events occurred for {my_team} this round.")
     except Exception as e:
@@ -342,8 +377,28 @@ with st.expander("🌍 International Events"):
                 if all_international_events:
                     for i, event in enumerate(all_international_events, 1):
                         st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
-                        st.write(event.get('description', 'N/A'))
+                        
+                        # Description의 첫 문장만 표기
+                        description = event.get('description', 'N/A')
+                        end_indices = [idx for idx in [description.find('.'), description.find('?'), description.find('!')] if idx != -1]
+                        first_sentence = description[:min(end_indices) + 1] if end_indices else description
+                        st.write(first_sentence)
+
+                        # --- 수정된 부분: 효과 요약 및 수식 숨기기 ---
+                        # 1. 효과 요약을 먼저 보여줍니다.
+                        if event.get("effect_summary"):
+                            st.info(f"💡 Parameters : {event.get('effect_summary')}")
+                        
+                        # 2. Popover 버튼 안에 복잡한 수식을 숨깁니다.
+                        with st.popover("⚙️ Equations for this event"):
+                            if event.get("delta_papers"):
+                                st.code(f"Paper Δ: {event.get('delta_papers')}", language="python")
+                            if event.get("delta_models"):
+                                st.code(f"Model Δ: {event.get('delta_models')}", language="python")
+                        
                         st.markdown("---")
+                else:
+                    st.info("No international events occurred this round.")
         else:
             st.info("No international events occurred this round.")
     except Exception as e:
