@@ -84,7 +84,7 @@ def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> in
         delta_for_partner = evaluate_delta(expr, combined)
         
         # 각 파트너별 계산 결과를 화면에 출력
-        st.write(f"- 파트너 **{country}**에 공식 적용 결과: **`{delta_for_partner}`**")
+        #st.write(f"- 파트너 **{country}**에 공식 적용 결과: **`{delta_for_partner}`**")
         
         total += delta_for_partner
         
