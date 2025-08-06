@@ -116,6 +116,11 @@ if st.session_state.domestic_event_shown:
         else:
             selected_for_display = relevant_parameters # Display all if 2 or fewer
 
+        # =================================================================
+        # [MODIFICATION] 선택된 Domestic 힌트를 session_state에 저장
+        st.session_state.domestic_event_hints = selected_for_display
+        # =================================================================
+
         if selected_for_display:
             for param_name in sorted(list(set(selected_for_display))): # Use set to avoid duplicates and sort for consistent display
                 st.subheader(f"💡 {param_name}")

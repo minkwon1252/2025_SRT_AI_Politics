@@ -53,9 +53,9 @@ def compute_cooperation_details(state, partners, coop_config, all_keys):
         
         if project != "None":
             sub_options = []
-            # DUR
-            if state[country].get("Joint_Research_DUR", False):
-                dur_points = coop_config["Joint_Research_DUR"]["points"]
+            # DU
+            if state[country].get("Joint_Research_DU", False):
+                dur_points = coop_config["Joint_Research_DU"]["points"]
                 project_points += dur_points
                 sub_options.append(f"DUR (+{dur_points})")
             # Standard
@@ -93,7 +93,32 @@ if not st.session_state.get("authenticated_team"):
 team = st.session_state["authenticated_team"]
 negotiable_partners = ["Japan", "Korea", "Taiwan", "Mongolia"]
 partners = [c for c in negotiable_partners if c != team]
-coop_limit = 5 + st.session_state.get("hidden_params_Willing_to_Cooperate", 5)
+coop_limit = 10 + st.session_state.get("hidden_params_Willing_to_Cooperate", 5)
+
+# =================================================================
+# [MODIFICATION START] 사이드바 이벤트 힌트
+# =================================================================
+st.sidebar.header("📌 Event Hints")
+
+# --- 1. Domestic Event 힌트 표시 ---
+if st.session_state.get('event_title') and st.session_state.get('domestic_event_hints'):
+    st.sidebar.subheader(f"🏠 {st.session_state['event_title']}")
+    with st.sidebar.expander("View Domestic Hints"):
+        for hint in st.session_state.domestic_event_hints:
+            st.info(f"**{hint.replace('_', ' ')}** is a key parameter.")
+
+# --- 2. International Event 힌트 표시 ---
+if st.session_state.get('international_event_title') and st.session_state.get('international_event_hints'):
+    st.sidebar.subheader(f"🗺️ {st.session_state['international_event_title']}")
+    with st.sidebar.expander("View International Hints"):
+        for hint in st.session_state.international_event_hints:
+            st.warning(f"**{hint.replace('_', ' ')}** is a key parameter.")
+
+st.sidebar.divider()
+# =================================================================
+# [MODIFICATION END] 사이드바 이벤트 힌트
+# =================================================================
+
 
 st.title(f"🤝 {config.country_flags[team]} {team} - Cooperative Parameters")
 
@@ -120,8 +145,7 @@ st.markdown("""
     <br><br>
     You might face a <b>Prisoner’s Dilemma</b>, where sharing resources like semiconductors benefits both sides—but only if trust isn’t broken. Or a <b>Stag Hunt</b> might happen, where major gains are possible only when both nations commit fully. Or else, you might find yourself in a <b>Chicken Game</b>, where refusing to join a joint project leads to a dangerous standoff if no one backs down. Choose wisely.
 
-> **"I just want everyone to get along. With me, especially."**  
-> <i>– White Widow, Mission: Impossible – Dead Reckoning (2023)</i>
+> **"I just want everyone to get along. With me, especially."** > <i>– White Widow, Mission: Impossible – Dead Reckoning (2023)</i>
 </div>
 """, unsafe_allow_html=True)
 
@@ -301,11 +325,11 @@ with st.form(key=f"form_{selected_country}"):
         sub_cols = st.columns(2)
         with sub_cols[0]:
             # DUR
-            meta_dur = config.coop_params["Joint_Research_DUR"]
+            meta_dur = config.coop_params["Joint_Research_DU"]
             st.toggle(
-                label=f"Dual-Use Restrictions ({meta_dur['points']} pt)",
-                value=st.session_state.cooperation_state[selected_country]["Joint_Research_DUR"],
-                key=f"{selected_country}_Joint_Research_DUR_temp",
+                label=f"Dual-Use Available ({meta_dur['points']} pt)",
+                value=st.session_state.cooperation_state[selected_country]["Joint_Research_DU"],
+                key=f"{selected_country}_Joint_Research_DU_temp",
                 help=meta_dur["desc"]
             )
         with sub_cols[1]:
@@ -339,13 +363,16 @@ if submitted:
     selected_project = st.session_state[f"{selected_country}_Joint_Research_Project_temp"]
     temp_state[selected_country]["Joint_Research_Project"] = selected_project
     if selected_project != "None":
-        temp_state[selected_country]["Joint_Research_DUR"] = st.session_state[f"{selected_country}_Joint_Research_DUR_temp"]
+        temp_state[selected_country]["Joint_Research_DU"] = st.session_state[f"{selected_country}_Joint_Research_DU_temp"]
         temp_state[selected_country]["Joint_Research_Standard"] = st.session_state[f"{selected_country}_Joint_Research_Standard_temp"]
     else: # if no project selected, reset sub-options
-        temp_state[selected_country]["Joint_Research_DUR"] = False
+        temp_state[selected_country]["Joint_Research_DU"] = False
         temp_state[selected_country]["Joint_Research_Standard"] = "None"
         
     st.session_state.cooperation_state = temp_state
+
+    with open(f"shared_data/cooperation_{team}.json", "w") as f:
+        json.dump(st.session_state.cooperation_state, f)
     
     st.toast(f"Agreement with {selected_country} updated!")
     time.sleep(1)

@@ -74,9 +74,9 @@ for team_name in all_player_teams:
         initial_scores.get(team_name, {}).get('papers', 0),
         initial_scores.get(team_name, {}).get('models', 0),
         growth,
-        all_params.get(team_name, {}).get('hidden', {}),
-        all_params.get(team_name, {}).get('coop', {})
+        all_params 
     )
+    
     all_results[team_name] = {
         'papers': int(final_p), 'models': int(final_m),
         'paper_delta': int(details.get('total_paper_delta', 0)),
@@ -119,9 +119,24 @@ with st.expander("🔍 View Detailed Breakdown of Your Growth"):
     details = my_results.get('delta_details', {})
     if details:
         col1, col2 = st.columns(2)
+
+        # --- 모델 성장 상세 내역 ---
+        with col1:
+            st.markdown("##### 🪄 Model Growth Details")
+            st.markdown(f"- **From New Papers**: `+{details.get('from_papers_model', 0):.2f}`")
+
+            # 국내 이벤트
+            for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
+                st.markdown(f"- Domestic Event {i}: `{event_delta.get('model_delta', 0)}`")
+            
+            # 국제 이벤트
+            for i, event_delta in enumerate(details.get('international_deltas', []), 1):
+                st.markdown(f"- Intl. Event {i}: `{event_delta.get('model_delta', 0):.2f}`")
+
+            st.markdown(f"**Total: `{details.get('total_model_delta', 0):.2f}`**")
         
         # --- 논문 성장 상세 내역 ---
-        with col1:
+        with col2:
             st.markdown("##### 📄 Paper Growth Details")
             st.markdown(f"- **Base Growth**: `{details.get('base_growth', 0)}`")
             
@@ -135,20 +150,7 @@ with st.expander("🔍 View Detailed Breakdown of Your Growth"):
 
             st.markdown(f"**Total: `{int(details.get('total_paper_delta', 0))}`**")
 
-        # --- 모델 성장 상세 내역 ---
-        with col2:
-            st.markdown("##### 🪄 Model Growth Details")
-            st.markdown(f"- **From New Papers**: `+{details.get('from_papers_model', 0):.2f}`")
 
-            # 국내 이벤트
-            for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
-                st.markdown(f"- Domestic Event {i}: `{event_delta.get('model_delta', 0)}`")
-            
-            # 국제 이벤트
-            for i, event_delta in enumerate(details.get('international_deltas', []), 1):
-                st.markdown(f"- Intl. Event {i}: `{event_delta.get('model_delta', 0):.2f}`")
-
-            st.markdown(f"**Total: `{details.get('total_model_delta', 0):.2f}`**")
 
 # Global AI Superpowers
 st.header("🌍 Global AI Superpowers")

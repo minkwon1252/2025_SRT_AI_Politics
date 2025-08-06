@@ -290,6 +290,12 @@ elif st.session_state.event_phase == "adjustment":
                 if k.startswith("hidden_params_")
             }
 
+            full_params_to_save = {**updated_hidden_params, **config.fixed_values[team]}
+            
+            # JSON 파일에 변경된 내용을 덮어씁니다.
+            with open(config.shared_dir / f"hidden_{team}.json", "w") as f:
+                json.dump(full_params_to_save, f)
+
             # 3. 다음 단계로 상태 전환
             st.session_state.event_phase = "international"
             
