@@ -426,7 +426,7 @@ if st.button("🚀 Start Next Round", type="primary"):
     # domestic 파일과 cooperation 파일을 모두 삭제하도록 주석 해제
     for country_name in all_player_teams:
         files_to_clear.append(config.shared_dir / f"domestic_{country_name}.json")
-        files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
+        #files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
     
     for f in files_to_clear:
         if f.exists():
