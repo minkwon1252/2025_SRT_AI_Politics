@@ -9,6 +9,7 @@ import json
 import pandas as pd
 import altair as alt
 import os
+import itertools
 
 u = 84.17
 threshold = 40 * u / 19
@@ -92,7 +93,6 @@ def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> in
     #st.warning("--- 🕵️ 디버깅 종료 ---")
     # --- 디버깅 코드 종료 ---
     return total
-
 
 def category_to_multiplier(val, mapping):
     return mapping.get(str(val).strip(), 1.0)
@@ -280,35 +280,45 @@ def get_coop_info(param, true_val, intel_score, options=None):
     return f"{param}: {pick}"
 
 # --- Summary Page Helper Functions ---
-def calculate_round_results(team_name, initial_papers, initial_models, growth_rate, hidden_params, coop_params_raw):
+def parse_dilemma_papers(outcome_str, val_a, val_b):
+    if not isinstance(outcome_str, str):
+        return outcome_str
+    
+    total = 0
+    if "A" in outcome_str:
+        total += val_a if "+A" in outcome_str or "A" == outcome_str else -val_a
+    if "B" in outcome_str:
+        total += val_b if "+B" in outcome_str or "B" == outcome_str else -val_b
+    return total
+
+def calculate_round_results(team_name: str, initial_papers: int, initial_models: int, growth_rate: int, all_params: dict) -> tuple[tuple[int, int], dict]:
     """
-    한 팀의 라운드 결과를 계산합니다. (이벤트별 상세 델타 포함)
+    한 팀의 라운드 결과를 계산합니다. (모든 이벤트 유형을 한 번에 처리)
     """
-    # 상세 내역을 저장할 리스트 초기화
+    hidden_params = all_params.get(team_name, {}).get('hidden', {})
+    coop_params_raw = all_params.get(team_name, {}).get('coop', {})
+    
     domestic_deltas = []
     international_deltas = []
-
-    # 평가에 필요한 파라미터들 병합
     team_fixed_values = config.fixed_values.get(team_name, {})
     evaluation_params = {**team_fixed_values, **hidden_params}
     
+    # (gdp_map, nat_resource_map 처리 부분은 기존과 동일)
     gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0}
     if "GDP" in evaluation_params and isinstance(evaluation_params["GDP"], str):
         evaluation_params["GDP_value"] = gdp_map.get(evaluation_params["GDP"], 0)
-
     nat_resource_map = {"Low": 0.5, "High": 1.0}
     if "Natural_Resource_Reserves" in evaluation_params and "Resource_value" not in evaluation_params:
          evaluation_params["Resource_value"] = nat_resource_map.get(evaluation_params["Natural_Resource_Reserves"], 0)
 
-    # 국내 이벤트 처리
+    # 국내 이벤트 처리 (기존과 동일)
     domestic_event_file_path = config.shared_dir / f"domestic_{team_name}.json"
     if os.path.exists(domestic_event_file_path):
         try:
             with open(domestic_event_file_path, "r") as f:
                 all_domestic_events = json.load(f)
                 if not isinstance(all_domestic_events, list):
-                    all_domestic_events = [all_domestic_events] # 리스트가 아니면 리스트로 만듦
-            
+                    all_domestic_events = [all_domestic_events]
             for event in all_domestic_events:
                 paper_d = evaluate_delta(event.get("delta_papers", "0"), evaluation_params)
                 model_d = evaluate_delta(event.get("delta_models", "0"), evaluation_params)
@@ -316,39 +326,67 @@ def calculate_round_results(team_name, initial_papers, initial_models, growth_ra
         except (json.JSONDecodeError, IndexError):
             pass
 
-    # 국제 이벤트 처리
+    # --- [핵심 수정] 범용 국제 이벤트 처리 로직 ---
     international_event_file = config.shared_dir / "international.json"
     if os.path.exists(international_event_file):
-        try:
-            with open(international_event_file, "r") as f:
-                all_international_events = json.load(f)
+        with open(international_event_file, "r") as f:
+            all_international_events = json.load(f)
 
-            for event in all_international_events:
-                paper_d = evaluate_event_international(event.get("delta_papers", "0"), evaluation_params, coop_params_raw)
-                model_d = evaluate_event_international(event.get("delta_models", "0"), evaluation_params, coop_params_raw)
-                international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
-        except (json.JSONDecodeError, IndexError):
-            pass
+        for event in all_international_events:
+            event_type = event.get("evaluation_type")
+            paper_d, model_d = 0, 0
 
-    # 전체 델타 합산
+            if event_type == "interactive" and "logic" in event:
+                logic = event["logic"]
+                # team_name을 A 국가로 설정
+                team_a_coop = coop_params_raw
+                team_a_hidden = hidden_params
+                
+                # A 국가의 파트너들을 순회하며 B 국가로 설정
+                for team_b_name in team_a_coop.keys():
+                    if team_b_name not in all_params: continue
+
+                    team_b_coop = all_params.get(team_b_name, {}).get('coop', {})
+                    team_b_hidden = all_params.get(team_b_name, {}).get('hidden', {})
+
+                    # 활성화 조건 확인
+                    is_active = team_a_coop.get(team_b_name, {}).get(logic["activation_param"], False) and \
+                                team_b_coop.get(team_name, {}).get(logic["activation_param"], False)
+                    
+                    if not is_active: continue
+
+                    # 비교 파라미터 값 가져오기
+                    val_a = team_a_hidden.get(logic["comparison_param"], 0)
+                    val_b = team_b_hidden.get(logic["comparison_param"], 0)
+                    threshold = logic["threshold"]
+                    
+                    # 2x2 매트릭스 quadrant 결정
+                    if val_a > threshold and val_b > threshold: outcome_key = "high_high"
+                    elif val_a > threshold and val_b <= threshold: outcome_key = "high_low"
+                    elif val_a <= threshold and val_b > threshold: outcome_key = "low_high"
+                    else: outcome_key = "low_low"
+                    
+                    # A 국가에 대한 결과 계산
+                    outcome_for_a = logic["outcomes"][outcome_key]["A"]
+                    model_d += outcome_for_a.get("models", 0)
+                    paper_d += parse_dilemma_papers(outcome_for_a.get("papers", 0), val_a, val_b)
+            
+            else: # 일반 또는 글로벌 이벤트
+                paper_d = evaluate_event_international(event.get("delta_papers", "0"), hidden_params, coop_params_raw)
+                model_d = evaluate_event_international(event.get("delta_models", "0"), hidden_params, coop_params_raw)
+            
+            international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
+
+    # 전체 델타 합산 및 최종 결과 반환 (기존과 동일)
     total_paper_delta = growth_rate + sum(d['paper_delta'] for d in domestic_deltas) + sum(d['paper_delta'] for d in international_deltas)
     final_papers = max(0, initial_papers + total_paper_delta)
-
     new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
-    
     total_model_delta = new_models_from_papers + sum(d['model_delta'] for d in domestic_deltas) + sum(d['model_delta'] for d in international_deltas)
     final_models = max(0.0, initial_models + total_model_delta)
-    
-    # 반환할 상세 내역 딕셔너리 구조 변경
     delta_details = {
-        'base_growth': growth_rate,
-        'domestic_deltas': domestic_deltas,
-        'international_deltas': international_deltas,
-        'total_paper_delta': total_paper_delta,
-        'from_papers_model': new_models_from_papers,
-        'total_model_delta': total_model_delta
+        'base_growth': growth_rate, 'domestic_deltas': domestic_deltas, 'international_deltas': international_deltas,
+        'total_paper_delta': total_paper_delta, 'from_papers_model': new_models_from_papers, 'total_model_delta': total_model_delta
     }
-    
     return (final_papers, final_models), delta_details
 
 def load_history():
@@ -368,4 +406,5 @@ def save_history(new_round_data):
         history_file = config.shared_dir / "history.json"
         with open(history_file, "w") as f:
             json.dump(history, f, indent=4)
+
 

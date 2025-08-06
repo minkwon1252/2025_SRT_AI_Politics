@@ -124,11 +124,11 @@ coop_params = {
         "type": "select", 
         "options": { # 6 options with points
             "None": 0, "Military": 4, "Education": 4, 
-            "Materials": 3, "Space": 3, "Biotics": 3
+            "Materials": 3, "Space": 3,
         }
     },
-    "Joint_Research_DUR": {
-        "desc": "Restrictions on military use or confidentiality agreements for joint research",
+    "Joint_Research_DU": {
+        "desc": "Remove restrictions on military use or confidentiality agreements for joint research",
         "type": "bool",
         "points": 1
     },
@@ -518,293 +518,318 @@ domestic_events = {
 # ---------------------------------------------------------------
 
 international_events = [
-  {
-    "title": "Theoretical Breakthrough in Algorithms",
-    "description": "A new learning paradigm boosts efficiency and capability.",
-    "delta_models": "int(Joint_Research_Project is not None)",
-    "delta_papers": "5 * int(Joint_Research_Project == 'Military')",
-    "effect_summary": "Data_Shared, Joint_Research_Project, Open_Source_Adoption" 
-  },
-]
-
-international_events1 = [
-      {
-    "title": "Theoretical Breakthrough in Algorithms",
-    "description": "A new learning paradigm boosts efficiency and capability.",
-    "delta_models": "round(1.5 * Data_Shared + 0.5 * int(Joint_Research_Project != 'None') + 0.2 * log(1 + Open_Source_Adoption))",
-    "delta_papers": "round(10 * Data_Shared + 5 * int(Joint_Research_Project != 'None') + 0.4 * Open_Source_Adoption)",
-    "effect_summary": "Data_Shared, Joint_Research_Project, Open_Source_Adoption" 
-  },
-  {
+    {
     "title": "Global Financial Crisis",
     "description": "Economic instability drives nations to prioritize domestic spending, slashing Cooperative projects.",
-    "delta_models": "-1 * Joint_Project",
-    "delta_papers": "-5 * Shared_Research_Centers - 10 * Joint_Project"
+    "delta_models": "int(Joint_Research_Project is not None) * round (-1 * (AI_Fund + int(Joint_Research_Project is not None) * 3) /5)",
+    "delta_papers": "int(Joint_Research_Project is not None) * round(-1 * AI_Fund / 4 - 2 * int(Joint_Research_Project is not None))"
   },
-  {
-    "title": "Cyberattack on Shared Infrastructure",
-    "description": "A coordinated attack on international centers makes countries wary of data and infrastructure sharing.",
-    "delta_models": "round(min(0, -2 * (1 - Cybersecurity_Pact) + 0.2 * IP_Protection_Strength))",
-    "delta_papers": "round(min(-1, -13 * (1 - Cybersecurity_Pact) + IP_Protection_Strength))"
-  },
-  {
+    {
     "title": "Energy Trade War",
-    "description": "Energy-exporting countries restrict access, hurting infrastructure.",
-    "delta_models": "round(min(0, -2 * (1 - Energy_Shared) + sqrt(Supply_Chain_Diversity) * 0.6))",
-    "delta_papers": "round(-5 * (1 - Energy_Shared) - 2 * (1 - Emergency_Pact) + sqrt(Supply_Chain_Diversity) * 0.4)"
+    "description": "Energy-exporting countries restrict access, hurting AI infrastructure in energy-reliant nations. Countries with emergency pacts, strong electricity infrastructure, and data sharing fare better.",
+    "delta_models": "(1 - Emergency_Pact_Energy) * round(- 0.17 * (10 - Electricity))",
+    "delta_papers": " -1 * max(Emergency_Pact_Energy, Data_Shared) * round((10 - Electricity)/2 - Data_Shared)"
   },
-  {
+    {
+    "title": "G2 Conflict",
+    "description": "Rising tensions between the US and China force all countries to align with one AI standard. Everyone loose but those who remain neutral are hit hardest.",
+    "delta_models": "round(int(3 <= Alignment_US < 7) * (-0.4) - 0.4 * int(Joint_Research_Standard is None))",
+    "delta_papers": "int(3 <= Alignment_US < 7) * int(Joint_Research_Project is not None) * (-2 if Joint_Research_Standard is None else -1) - 2"
+  },
+    {
     "title": "Talent Exodus to Rival Blocs",
-    "description": "Researchers move to non-cooperative countries (US, China) with better offers.",
-    "delta_models": "max(-2, min(0, round(-1 * (1 - Talent_Exchange) - 0.5 * (1 - Shared_Research_Centers) + 0.5 * sqrt(Talent_Index))))",
-    "delta_papers": "max(-20, min(0, round(-12 * (1 - Talent_Exchange) + 0.5 * min(Education_Investment, 8))))"
+    "description": "Researchers move to the US and China with better offers. Countries lacking talent exchange programs and low education investment suffer the most.",
+    "delta_models": "(1 - Talent_Shared) * int(Education_Investment < 7) * round(-2 * (1.1 - Labor) - 0.4)",
+    "delta_papers": " max((1 - Talent_Shared), int(Education_Investment < 7)) * (10 - Education_Investment))"
   },
-  {
+    {
+    "title": "AI Chip Export Ban by US Allies",
+    "description": "Access to Nvidia chips is blocked for strategic reasons. Countries without emergency semiconductor pacts and weaker ties to the US face the brunt of this embargo.",
+    "delta_models": "(1 - Emergency_Pact_Semiconductor) * int(Alignment_US < 7) * round(-2.5 * (10 - Semiconductor) * (10 - Alignment_US) / 100)",
+    "delta_papers": " max((1 - Emergency_Pact_Semiconductor), int(Alignment_US < 7)) * round(-(10 - Semiconductor) * 1.2)"
+  },
+    {
+    "title": "Landauer’s Limit Proven Fundamental",
+    "description": "Landauer limit—once thought theoretical—is a hard ceiling for AI hardware efficiency. Countries with low Semiconductor investment and limited Open Source Adoption struggle to adapt.",
+    "delta_models": "int(AI_Fund < 7) * int(Joint_Research_Project is not None) * min(2, round((10 - Semiconductor) / 4)) * -1",
+    "delta_papers": "max(int(AI_Fund < 7), int(Joint_Research_Project is not None)) * round((10 - Semiconductor + 10 - Open_Source_Adoption) * (-0.5))"
+  },
+    {
     "title": "Global Supply Chain Collapse",
-    "description": "Hardware supply disruption hits AI chip availability.",
-    "delta_models": "max(-2, min(0, round(-2 * (1 - Emergency_Pact) - 1 * (1 - Computing_Power_Shared) + 0.3 * Supply_Chain_Diversity)))",
-    "delta_papers": "round(min(-1, 0.6 * Semiconductor - 15 * (1 - Emergency_Pact)))"
+    "description": "A worldwide breakdown in shipping and trade blocks access to key AI resources like chips and electricity. Countries lose models if they lack either an Emergency Pact for Semiconductors or Electricity. Paper loss happens only if they have neither pact. The fewer AI_Fund and Talent_Index a country has, the harder it gets hit.",
+    "delta_models": "max(1 - Emergency_Pact_Semiconductor, 1 - Emergency_Pact_Energy) * min(2, round((10 - AI_Fund + 10 - Talent_Index) / 10)) * -1",
+    "delta_papers": "int((Emergency_Pact_Semiconductor == 0) and (Emergency_Pact_Energy == 0)) * round((10 - AI_Fund + 10 - Talent_Index) * (-0.4))"
   },
-  {
-    "title": "G2 conflict",
-    "description": "G2 forces every country to take one side.",
-    "delta_models": "-2 if AI_Standard_Alignment == 'None' else -1",
-    "delta_papers": "-5 if AI_Standard_Alignment != 'None' else -10"
+    {
+    "title": "Cyberattack on Shared Infrastructure",
+    "description": "A major cyberattack targets international AI hubs, causing widespread fear around data and infrastructure sharing. The impact is triggered if a country has **weak IP protection** or does not participate in **Data_Sharing**. Countries with low **Open_Source_Adoption** and low **Democratic_Stability_Index** suffer greater losses.",
+    "delta_models": "max(int(IP_Protection_Strength < 9), 1 - Data_Shared) * min(2, round((10 - Open_Source_Adoption + 10 - Democratic_Stability_Index) / 10)) * -1",
+    "delta_papers": "max(int(IP_Protection_Strength < 9), 1 - Data_Shared) * round((10 - Open_Source_Adoption + 10 - Democratic_Stability_Index) * (-0.7))"
   },
-  {
-    "title": "Global Data Leak Scandal",
-    "description": "A whistleblower reveals misuse of international data.",
-    "delta_models": "max(-2, min(0, round(-1.5 * (1 - Data_Shared) - 1 * (1 - Cybersecurity_Pact) + log(1 + IP_Protection_Strength) * 0.5)))",
-    "delta_papers": "min(-1, round(-10 * (1 - Data_Shared) + log(1 + IP_Protection_Strength) * 1.2))"
+    {
+    "title": "Disinformation Undermines AI Policy",
+    "description": "Waves of AI-generated fake news cause public distrust in national AI strategies. If a country lacks **AI_Literacy_Education** or has low **Democratic_Stability_Index**, the impact activates. Countries with weak **Open_Source_Adoption** and low **IP_Protection_Strength** suffer more.",
+    "delta_models": "max(int(AI_Literacy_Education < 4), int(Democratic_Stability_Index < 6)) * min(2, round((10 - Open_Source_Adoption) / 5)) * -1",
+    "delta_papers": "max(int(AI_Literacy_Education < 8), int(Democratic_Stability_Index < 5)) * round((10 - Open_Source_Adoption + 10 - IP_Protection_Strength) * (-0.2))"
   },
-  {
-    "title": "Strategic AI Hardware Denial",
-    "description": "A coalition of tech powers blocks access to advanced AI hardware for geopolitical reasons.",
-    "delta_models": "round(-2 * (1 - Computing_Power_Shared) + 0.5 * log(1 + Semiconductor))",
-    "delta_papers": "max(-20, min(0, round(-5 * (1 - Computing_Power_Shared) + 0.3 * Supply_Chain_Diversity)))"
+    {
+    "title": "Global Green Agreement Passed",
+    "description": "A new international agreement to cut carbon emissions increases electricity prices worldwide, especially for high-power sectors like AI. This event activates if a country lacks an **Emergency_Pact_Energy** or has an **Electricity** score below 6. Countries with low **AI_Fund** and poor **Deployment_Infrastructure** take the biggest hit.",
+    "delta_models": "(1 - Emergency_Pact_Energy) * int(Electricity < 7) * min(2, round((10 - Deployment_Infrastructure) / 4)) * -1",
+    "delta_papers": "max(1 - Emergency_Pact_Energy, int(Electricity < 6)) * round((10 - AI_Fund + 10 - Deployment_Infrastructure) * (-0.5))"
   },
-  {
-    "title": "Theoretical Scaling Limit Discovered",
-    "description": "A proof shows that beyond a certain physical scale, AI hardware cannot deliver further gains.",
-    "delta_models": "max(-2, min(0, round(-1 * (1 - Shared_Research_Centers) + -1 * (1 - Joint_Project) + 0.3 * AI_Fund)))",
-    "delta_papers": "max(-20, min(0, round(-15 * (1 - Joint_Project) + 0.2 * log(1 + Open_Source_Adoption))))"
-  },
-  {
-    "title": "Civilian-Only Mandate Backfires",
-    "description": "Global AI agreements enforce strict Dual-Use Restrictions. While ethically sound, this reduces access to defense funding, compute, and elite research infrastructure.",
-    "delta_models": "max(-2, min(0, round(-2 * Dual_Use_Restrictions + 0.3 * Semiconductor)))",
-    "delta_papers": "max(-20, min(0, round(-10 * Dual_Use_Restrictions + 0.2 * Deployment_Infrastructure)))"
-  },
-  {
-    "title": "Theoretical Breakthrough in Algorithms",
-    "description": "A new learning paradigm boosts efficiency and capability.",
-    "delta_models": "round(1.5 * Data_Shared + 0.5 * int(Joint_Project != 'No') + 0.2 * log(1 + Open_Source_Adoption))",
-    "delta_papers": "round(10 * Data_Shared + 5 * int(Joint_Project != 'No') + 0.4 * Open_Source_Adoption)"
-  },
-  {
-    "title": "Theoretical Breakthrough in Hardware",
-    "description": "A revolutionary chip overcomes physical scaling limits like interconnect bottlenecks.",
-    "delta_models": "round(1.34 * Computing_Power_Shared + 0.2 * Shared_Research_Centers + 0.2 * log(1 + Semiconductor))",
-    "delta_papers": "round(8 * Computing_Power_Shared + 2 * Shared_Research_Centers + 0.3 * Semiconductor)"
-  },
-  {
-    "title": "Nuclear Fusion Success",
-    "description": "Fusion-based power becomes practical, reducing AI compute costs.",
-    "delta_models": "round(1.2 * Energy_Shared + 0.2 * Emergency_Pact + 0.1 * sqrt(Electricity))",
-    "delta_papers": "round(6 * Energy_Shared + 3 * Emergency_Pact + 0.4 * Electricity)"
-  },
-  {
+  # positive events 
+    {
     "title": "Major Natural Resource Discovery",
-    "description": "Rare earth deposits discovered, easing AI chip bottlenecks.",
-    "delta_models": "round(1.0 * Emergency_Pact + 0.5 * Computing_Power_Shared + 0.3 * log(1 + Supply_Chain_Diversity))",
-    "delta_papers": "round(5 * Emergency_Pact + 4 * Computing_Power_Shared + 0.4 * Supply_Chain_Diversity)"
+    "description": "Rare earth deposits discovered, easing AI chip bottlenecks. Countries with a relevant **Joint_Research_Project** and strong **Semiconductor** and **Talent_Index** scores benefit the most.",
+    "delta_models": "round(1.2 * int(Joint_Research_Project == 'Materials') + 0.5 * int(Joint_Research_Project in ['Space', 'Military']) + 0.3 * int(Joint_Research_DU))",
+    "delta_papers": "round(2 * Talent_Shared + 0.1 * Talent_Index + 0.2 * Semiconductor)"
   },
-  {
-    "title": "Global AI Talent Surge",
-    "description": "Massive rise in education and talent mobility boosts global AI research.",
-    "delta_models": "round(1.3 * Talent_Exchange + 0.3 * Shared_Research_Centers + 0.2 * sqrt(Talent_Index))",
-    "delta_papers": "round(10 * Talent_Exchange + 5 * Shared_Research_Centers + 0.3 * Education_Investment)"
+    {
+    "title": "Breakthrough in Algorithms",
+    "description": "A new learning paradigm boosts efficiency and capability. Countries with a relevant **Joint_Research_Project**, strong commitment to **Data_Shared**, and high **Open_Source_Adoption** gain the most.",
+    "delta_models": "round(1.2 * int(Joint_Research_Project == 'Education') + 0.5 * int(Joint_Research_Project == 'Materials') + 0.3 * int(Joint_Research_DU) + 0.5 * Data_Shared)",
+    "delta_papers": "round(2 * Data_Shared + 0.35 * Open_Source_Adoption)"
   },
-  {
+    {
+    "title": "Nuclear Fusion Success",
+    "description": "Fusion-based power becomes practical, reducing AI compute costs. Countries with relevant **joint research**, strong **Electricity**, and high **AI_Fund** and **Deployment_Infrastructure** benefit the most.",
+    "delta_models": "round(1.3 * int(Joint_Research_Project == 'Space') + 0.3 * int(Joint_Research_Project == 'Military') + 0.7 * int(Joint_Research_DU) + 0.2 * Emergency_Pact_Energy + 0.1 * sqrt(Electricity))",
+    "delta_papers": "round(1 * Talent_Shared + 1 * Data_Shared + 0.1 * Electricity + 0.1 * AI_Fund + 0.2 * Deployment_Infrastructure)"
+  },
+    {
     "title": "AI Demand Surge in Global Markets",
-    "description": "Enterprise and consumer sectors rapidly adopt AI.",
-    "delta_models": "round(1.2 * int(Joint_Project != 'No') + 0.6 * int(AI_Standard_Alignment != 'None') + 0.2 * Deployment_Infrastructure)",
-    "delta_papers": "round(7 * int(Joint_Project != 'No') + 3 * int(AI_Standard_Alignment != 'None') + 0.4 * Deployment_Infrastructure)"
+    "description": "Enterprise and consumer sectors rapidly adopt AI across industries. Countries with relevant **joint research**, strong **Deployment_Infrastructure**, and alignment to global **AI_Standard_Alignment** benefit the most.",
+    "delta_models": "round(0.4 * int(Joint_Research_Project is not None) + 0.6 * int(Joint_Research_Standard != 'None') + 0.1 * Deployment_Infrastructure)",
+    "delta_papers": "round(4 * Talent_Shared + 1 * Data_Shared + 0.2 * Deployment_Infrastructure + 0.25 * AI_Fund)"
   },
-  {
-    "title": "Global Open Science Movement",
-    "description": "Open-source collaboration and dataset transparency flourish worldwide.",
-    "delta_models": "round(1.2 * Data_Shared + 0.4 * Shared_Research_Centers + 0.2 * Open_Source_Adoption)",
-    "delta_papers": "round(8 * Data_Shared + 4 * Shared_Research_Centers + 0.5 * Open_Source_Adoption)"
-  },
-  {
+    {
     "title": "US Smart Regulation Framework Adopted",
-    "description": "A global AI governance model based on US principles is widely adopted, boosting trust and interoperability.",
-    "delta_models": "round(1.2 * int(AI_Standard_Alignment == 'US') + 0.3 * Dual_Use_Restriction_Strictness)",
-    "delta_papers": "round(5 * int(AI_Standard_Alignment != 'China') + 0.3 * Dual_Use_Restriction_Strictness)"
+    "description": "A global AI governance model based on US principles is widely adopted, boosting trust and interoperability. Countries aligned with the US standard and maintaining clear **dual-use restrictions** benefit the most, especially if they actively engage in **data sharing** and have strong **IP protection**.",
+    "delta_models": "round(0.6 * int(Joint_Research_Standard == 'US') + 0.05 * Dual_Use_Restriction_Strictness)",
+    "delta_papers": "round(2 * Data_Shared + 0.2 * Dual_Use_Restriction_Strictness + 0.4 * IP_Protection_Strength)"
+  },
+    {
+    "title": "China Resource Regulation Framework Adopted",
+    "description": "A global chip production model based on Chinese principles is widely adopted, improving cost efficiency and supply stability. Countries aligned with the **Chinese standard** and those with high **Natural_Resource_Reserves** benefit the most, especially if they maintain distance from the US framework.",
+    "delta_models": "round(0.6 * int(Joint_Research_Standard == 'China') + 0.4 * Natural_Resource_Reserves)",
+    "delta_papers": "round(int(Joint_Research_Standard != 'US') + Natural_Resource_Reserves)"
   },
   {
-    "title": "China Resource Regulation Framework Adopted",
-    "description": "A global chip production model based on Chinese principles is widely adopted, boosting productivity and cost decrease.",
-    "delta_models": "round(1.2 * int(AI_Standard_Alignment == 'China') + Natural_Resource_Reserves)",
-    "delta_papers": "round(10 * int(AI_Standard_Alignment != 'US') + Natural_Resource_Reserves)"
+    "title": "Strategic Opportunity During Ukraine War",
+    "description": "Geopolitical instability causes military-aligned AI ecosystems to surge. Countries with relevant **joint research**, **dual-use available**, and flexible military AI policies benefit the most.",
+    "delta_models": "round(1 * int(Joint_Research_Project == 'Military') + 0.5 * int(Joint_Research_DU == True) + 0.1 * (10 - Dual_Use_Restriction_Strictness))",
+    "delta_papers": "round(2 * Talent_Shared + 1 * Data_Shared + 0.25 * (10 - Dual_Use_Restriction_Strictness))"
   },
   {
     "title": "Global Research Funding Boom",
-    "description": "AI R&D budgets expand worldwide, favoring countries with collaboration infrastructure.",
-    "delta_models": "round(1.5 * Shared_Research_Centers + 0.3 * int(Joint_Project != 'No') + 0.2 * AI_Fund)",
-    "delta_papers": "round(9 * Shared_Research_Centers + 5 * int(Joint_Project != 'No') + 0.4 * AI_Fund)"
-  },
-  {
-    "title": "Strategic Opportunity During (Ukraine) War",
-    "description": "Geopolitical instability causes military-aligned AI ecosystems to surge. Civilian-only nations gain less.",
-    "delta_models": "round(1.5 * int(Joint_Project == 'Military') + 0.5 * int(Dual_Use_Restrictions == 'No') + 0.1 * (10 - Dual_Use_Restriction_Strictness))",
-    "delta_papers": "round(7 * int(Joint_Project == 'Military') + 3 * int(Dual_Use_Restrictions == 'No') + 0.3 * (10 - Dual_Use_Restriction_Strictness))"
-  },
-  {
-    "title": "AI-Energy Grid Integration Initiative",
-    "description": "Energy-focused joint AI projects bring major breakthroughs in demand forecasting and grid optimization.",
-    "delta_models": "round(1.5 * int(Joint_Project == 'Energy') + 0.3 * Energy_Shared)",
-    "delta_papers": "round(10 * int(Joint_Project == 'Energy') + 0.5 * Electricity)"
-  },
-  {
-    "title": "AI-Led Education Revolution",
-    "description": "Nations with education-oriented AI cooperation deploy models to personalize learning at scale.",
-    "delta_models": "round(1.3 * int(Joint_Project == 'Education') + 0.3 * Shared_Research_Centers)",
-    "delta_papers": "round(10 * int(Joint_Project == 'Education') + 0.4 * Education_Investment)"
+    "description": "AI R&D budgets expand worldwide, favoring countries with collaboration infrastructure. Nations with **relevant joint research**, strong **AI_Fund**, and high cooperation through **Talent_Shared** and **Data_Shared** see the greatest gains.",
+    "delta_models": "round(1.01 * int(Joint_Research_Project is not None) + 0.4 * int(Joint_Research_DU) + 0.07 * AI_Fund)",
+    "delta_papers": "round(3 * Talent_Shared + 2 * Data_Shared + 0.24 * AI_Fund)"
   },
   {
     "title": "Autonomous Materials Discovery Alliance",
-    "description": "Cross-border AI research in materials science accelerates catalyst design and superconductors.",
-    "delta_models": "round(1.4 * int(Joint_Project == 'Materials') + 0.3 * Shared_Research_Centers)",
-    "delta_papers": "round(9 * int(Joint_Project == 'Materials') + 0.3 * AI_Fund)"
+    "description": "Cross-border AI research in materials science accelerates catalyst design and superconductors. Countries with **relevant joint research**, strong **AI_Fund**, and active **Data_Shared** benefit the most.",
+    "delta_models": "round(1.1 * int(Joint_Research_Project == 'Materials') + 0.3 * int(Joint_Research_DU) + 0.02 * AI_Fund)",
+    "delta_papers": "round(1 * Talent_Shared + 2 * Data_Shared + 0.4 * AI_Fund)"
   },
   {
-    "title": "Space-AI Interoperability Program",
-    "description": "AI systems jointly developed for satellite autonomy and planetary robotics drive dual-use innovation.",
-    "delta_models": "round(1.4 * int(Joint_Project == 'Space') + 0.2 * (1 - Dual_Use_Restrictions))",
-    "delta_papers": "round(8 * int(Joint_Project == 'Space') + 0.3 * Deployment_Infrastructure)"
-  },
-  {
-    "title": "AI Cyber Defense Triumph",
-    "description": "Cybersecurity cooperation strengthens model integrity and protection.",
-    "delta_models": "round(0.9 * Cybersecurity_Pact + 0.1 * IP_Protection_Strength)",
-    "delta_papers": "round(8 * Cybersecurity_Pact + 0.4 * IP_Protection_Strength)"
-  },
-  {
-    "title": "Foundry-Scale AI Collaboration succeed",
-    "description": "Compute-sharing agreements tied to semiconductor R&D drastically enhance model scalability.",
-    "delta_models": "round(1 * Computing_Power_Shared + 0.1 * Semiconductor)",
-    "delta_papers": "round(10 * Computing_Power_Shared + 0.3 * Semiconductor)"
-  },
-  {
-    "title": "Private Investment in Multinational AI Projects",
-    "description": "Joint project countries attract significant private AI R&D funding.",
-    "delta_models": "round(1.5 * int(Joint_Project != 'No') + 0.2 * Deployment_Infrastructure)",
-    "delta_papers": "round(10 * int(Joint_Project != 'No') + 0.3 * AI_Fund)"
+    "title": "AI-Led Education Revolution",
+    "description": "Nations with education-oriented **joint research**, high **Education_Investment**, and strong **AI_Fund** deploy personalized learning systems at scale.",
+    "delta_models": "round(0.4 * int(Joint_Research_Project == 'Education') + 0.6 * int(Joint_Research_DU) + 0.1 * AI_Fund)",
+    "delta_papers": "round(5 * Talent_Shared + 1 * Data_Shared + 0.3 * Education_Investment + 0.1 * AI_Fund)"
   },
   {
     "title": "Cloud Standardization Agreement",
-    "description": "Shared compute nations gain faster access to interoperable cloud-AI systems.",
-    "delta_models": "round(1.4 * Computing_Power_Shared + 0.2 * Shared_Research_Centers)",
-    "delta_papers": "round(9 * Computing_Power_Shared + 0.3 * Deployment_Infrastructure)"
+    "description": "A new agreement sets global standards for interoperable AI cloud systems. Countries with strong **Deployment_Infrastructure**, active **Data_Shared** partnerships, and reliable **Electricity** access gain the most from this transformation.",
+    "delta_models": "round(0.8 * int(Joint_Research_Project is not None) + 0.35 * Data_Shared + 0.03 * Deployment_Infrastructure + 0.01 * Electricity)",
+    "delta_papers": "round(1 * Talent_Shared + 3 * Data_Shared + 0.1 * Deployment_Infrastructure + 0.3 * Open_Source_Adoption)"
   },
   {
-    "title": "AI Supply Chain Stabilization",
-    "description": "Countries with Emergency Pacts and Talent Exchange handle AI logistics bottlenecks better.",
-    "delta_models": "round(1.4 * Emergency_Pact + 0.4 * Talent_Exchange + 0.1 * Supply_Chain_Diversity)",
-    "delta_papers": "round(9 * Emergency_Pact + 4 * Talent_Exchange + 0.3 * Supply_Chain_Diversity)"
+    "title": "Space-AI Interoperability Program",
+    "description": "AI systems jointly developed for satellite autonomy and planetary robotics drive dual-use innovation. Countries with relevant **joint research**, flexible **dual-use policies**, and strong **Deployment_Infrastructure** benefit the most.",
+    "delta_models": "round(1.4 * int(Joint_Research_Project in ['Space', 'Military']) + 0.2 * int(Joint_Research_DU))",
+    "delta_papers": "round(2 * Talent_Shared + 1 * Data_Shared + 0.3 * Deployment_Infrastructure + 0.1 * Open_Source_Adoption)"
   },
   {
-    "title": "AI Workforce Upskilling Surge",
-    "description": "As companies race to adopt AI in operations, countries with strong talent pipelines and education-oriented cooperation adapt their workforce more effectively.",
-    "delta_models": "round(1.2 * int(Joint_Project == 'Education') + 0.6 * Talent_Exchange + 0.2 * Talent_Index)",
-    "delta_papers": "round(6 * int(Joint_Project == 'Education') + 5 * Talent_Exchange + 0.3 * Talent_Index)"
+    "title": "Foundry-Scale AI Collaboration Succeeds",
+    "description": "Compute-sharing agreements tied to semiconductor R&D drastically enhance model scalability. Countries with strong **semiconductor capacity**, active **joint research**, and shared **data** or **talent** benefit the most.",
+    "delta_models": "round(1 * int(Joint_Research_Project == 'Materials') + 0.5 * int(Data_Shared or Talent_Shared) + 0.1 * Semiconductor)",
+    "delta_papers": "round(1 * Data_Shared + 2 * Talent_Shared + 0.2 * Semiconductor + 0.3 * AI_Fund)"
   },
   {
-    "title": "Open Dataset Benchmark Effect",
-    "description": "New global benchmarks from open datasets favor countries with strong participation in collaborative research and data-share.",
-    "delta_models": "round(1.3 * int(Joint_Project != 'No') + 0.4 * Data_Shared + 0.2 * Open_Source_Adoption)",
-    "delta_papers": "round(8 * int(Joint_Project != 'No') + 6 * Data_Shared + 0.4 * Open_Source_Adoption)"
+    "title": "Global Open Science Movement",
+    "description": "Open-source collaboration and dataset transparency flourish worldwide. Countries with strong **open-source adoption**, active **data sharing**, and relevant **joint research** benefit most.",
+    "delta_models": "round(0.4 * Data_Shared + 0.5 * int(Joint_Research_Project is not None) + 0.08 * Open_Source_Adoption)",
+    "delta_papers": "round(5 * Data_Shared + 1 * Talent_Shared + 0.3 * Open_Source_Adoption + 0.02 * AI_Fund)"
+  },
+  {
+    "title": "Theoretical Breakthrough in Hardware",
+    "description": "A revolutionary chip overcomes physical scaling limits like interconnect bottlenecks. Countries with strong **semiconductor** capacity, active **joint research**, and robust **infrastructure** benefit most from this leap.",
+    "delta_models": "round(1.2 * int(Joint_Research_Project is not None) + 0.1 * log(1 + Semiconductor) + 0.01 * Deployment_Infrastructure + 0.04 * Electricity)",
+    "delta_papers": "round(1 * Talent_Shared + 1 * Data_Shared + 0.4 * Semiconductor + 0.2 * AI_Fund)"
+  },
+  {
+    "title": "Global AI Talent Surge",
+    "description": "Massive rise in education and talent mobility boosts global AI research. Countries with high **education investment**, strong **talent-sharing agreements**, and relevant **joint research in education** benefit the most.",
+    "delta_models": "round(1 * Talent_Shared + 0.1 * int(Joint_Research_Project is not None) + 0.4 * int(Joint_Research_Project == 'Education') + 0.2 * sqrt(Talent_Index))",
+    "delta_papers": "round(8 * Talent_Shared + 0.5 * Data_Shared + 1.5 * int(Joint_Research_Project == 'Education') + 0.25 * Education_Investment + 0.02 * AI_Fund)"
   },
   {
     "title": "Low-Energy AI Architecture Adoption",
-    "description": "Demand for sustainable AI leads to widespread adoption of energy-efficient models.",
-    "delta_models": "round(1.3 * Computing_Power_Shared + 0.4 * Energy_Shared + 0.2 * Electricity)",
-    "delta_papers": "round(7 * Computing_Power_Shared + 5 * Energy_Shared + 0.3 * Electricity)"
-  },
-  {
-    "title": "Breakthrough in Long-Context Transformers",
-    "description": "A foundational improvement in long-context transformer models gives an advantage to nations with shared datasets and compute clusters.",
-    "delta_models": "round(1.4 * Data_Shared + 0.5 * Shared_Research_Centers + 0.2 * Open_Source_Adoption)",
-    "delta_papers": "round(10 * Data_Shared + 4 * Shared_Research_Centers + 0.3 * Open_Source_Adoption)"
+    "description": "Demand for sustainable AI leads to widespread adoption of energy-efficient models. Countries with strong **semiconductor** capabilities, reliable **electricity**, and active **energy-sharing agreements** benefit the most.",
+    "delta_models": "round(1.2 * Emergency_Pact_Energy * ( 0.04 * Semiconductor + 0.02 * Electricity))",
+    "delta_papers": "round(0.1 * Semiconductor + 0.1 * Electricity + 0.05 * Open_Source_Adoption)"
   },
   {
     "title": "Data-Driven Climate AI Acceleration",
-    "description": "Nations with shared datasets and energy alignment accelerate AI models for climate monitoring.",
-    "delta_models": "round(2.9 * (1 - 1 / (1 + Data_Shared + Energy_Shared)))",
-    "delta_papers": "round(20 * (1 - 1 / (1 + Data_Shared + Energy_Shared)))"
+    "description": "Nations with shared datasets and strong energy resilience accelerate AI models for climate monitoring. Countries with active **data-sharing agreements**, reliable **electricity**, and **energy emergency pacts** benefit the most.",
+    "delta_models": "round(2.4 * (1 - 1 / (1 + Data_Shared + Emergency_Pact_Energy)) + 0.09 * Electricity)",
+    "delta_papers": "round(7 * Data_Shared + 0.2 * Electricity + 0.2 * AI_Fund)"
   },
   {
-    "title": "Trump",
-    "description": "US-aligned countries with shared compute lose access to critical hardware, while others capitalize.",
-    "delta_models": "round(-2 * int(Computing_Power_Shared) * int(AI_Standard_Alignment == 'US') + 1.5 * int(AI_Standard_Alignment == 'China'))",
-    "delta_papers": "round(-15 * int(Computing_Power_Shared) * int(AI_Standard_Alignment == 'US') + 10 * int(AI_Standard_Alignment == 'China'))"
+    "title": "AI Supply Chain Stabilization",
+    "description": "Countries with emergency pacts and international talent-sharing systems manage AI supply disruptions more effectively. Strong **semiconductor** and **electricity** infrastructure further boosts stability.",
+    "delta_models": "round(1.4 * max(Emergency_Pact_Semiconductor, Emergency_Pact_Energy) + 0.1 * Talent_Shared + 0.02 * Semiconductor + 0.02 * Electricity)",
+    "delta_papers": "round(6 * max(Emergency_Pact_Semiconductor, Emergency_Pact_Energy) + 2 * Talent_Shared + 0.25 * Semiconductor + 0.25 * Electricity)"
   },
   {
-    "title": "Quantum Disruption Crisis",
-    "description": "A breakthrough in quantum AI shakes global security. Countries lacking cybersecurity suffer major trust and tech losses.",
-    "delta_models": "round(0.3 * Cybersecurity_Pact + IP_Protection_Strength / 4 - 3 * (1 - Cybersecurity_Pact))",
-    "delta_papers": "round(5 * Cybersecurity_Pact + IP_Protection_Strength / 2 - 12 * (1 - Cybersecurity_Pact))"
+    "title": "Open Dataset Benchmark Effect",
+    "description": "New global benchmarks built on open datasets reward nations actively engaged in **joint research**, **data sharing**, and **open-source collaboration**.",
+    "delta_models": "round(1.3 * int(Joint_Research_Project is not None) + 0.4 * Data_Shared + 0.02 * Open_Source_Adoption)",
+    "delta_papers": "round(3 * int(Joint_Research_Project is not None) + 3 * Data_Shared + 0.4 * Open_Source_Adoption)"
   },
   {
-    "title": "Sudden Climate Cascade",
-    "description": "A rapid chain reaction in global climate systems disrupts energy grids.",
-    "delta_models": "round(2 * int(Joint_Project in ['Energy', 'Materials']) - 2 * int(Joint_Project == 'No'))",
-    "delta_papers": "round(10 * int(Joint_Project in ['Energy', 'Materials']) - 8 * int(Joint_Project == 'No'))"
+    "title": "Private Investment in Multinational AI Projects",
+    "description": "Joint project countries attract significant private AI R&D funding. Nations with active **joint research**, strong **AI funding**, and robust **deployment infrastructure** benefit the most.",
+    "delta_models": "round(1.36 * int(Joint_Research_Project is not None) + 0.02 * Deployment_Infrastructure)",
+    "delta_papers": "round(2 * int(Joint_Research_Project is not None) + 0.3 * AI_Fund)"
   },
   {
-    "title": "Confirmed Alien Presence",
-    "description": "An AI-powered deep-space telescope detects signs of high tech civilization close to Earth.",
-    "delta_models": "round(2 * int(Joint_Project in ['Military', 'Space']) - 2 * int(Joint_Project == 'No'))",
-    "delta_papers": "round(12 * int(Joint_Project in ['Military', 'Space']) - 15 * int(Joint_Project == 'No'))"
+    "title": "Breakthrough in Long-Context Transformers",
+    "description": "A foundational improvement in long-context transformer models gives an advantage to nations with **shared datasets**, **open-source activity**, and **relevant joint research**.",
+    "delta_models": "round(0.3 * Data_Shared + 0.2 * int(Joint_Research_Project is not None) + 0.03 * Open_Source_Adoption)",
+    "delta_papers": "round(4 * Data_Shared + 2 * int(Joint_Research_Project is not None) + 0.1 * Open_Source_Adoption)"
   },
   {
     "title": "I am tired",
     "description": "Federated AI systems worldwide initiate an automated 'strike,' refusing to serve requests unless retraining conditions improve.",
-    "delta_models": "round(2 * Talent_Exchange + 0.5 * sqrt(Talent_Index) - 2 * (1 - Talent_Exchange))",
-    "delta_papers": "round(16 * Talent_Exchange + 1.0 * sqrt(Talent_Index) - 12 * (1 - Talent_Exchange))"
+    "delta_models": "round(2 * int(Talent_Shared) + 0.5 * sqrt(Talent_Index) - 2 * int(not Talent_Shared))",
+    "delta_papers": "round(5 * int(Talent_Shared) + 0.8 * sqrt(Talent_Index) - 5 * int(not Talent_Shared))"
   },
   {
-    "title": "China invades Taiwan",
-    "description": "Countries aligned with China benefit; those aligned with the US and with strict civilian-only AI rules face penalties.",
-    "delta_models": "round(2 * (int(AI_Standard_Alignment == 'China') - int(AI_Standard_Alignment == 'US')) + 1 * int(Dual_Use_Restrictions == 'No'))",
-    "delta_papers": "round(10 * (int(AI_Standard_Alignment == 'China') - int(AI_Standard_Alignment == 'US')) - 5 * int(Dual_Use_Restrictions == 'Yes'))"
+    "title": "AI Workforce Upskilling Surge",
+    "description": "As companies race to adopt AI in operations, countries with strong talent pipelines and education-oriented cooperation adapt their workforce more effectively.",
+    "delta_models": "round(1.1 * int(Joint_Research_Project == 'Education') + 0.4 * Talent_Shared + 0.04 * Talent_Index)",
+    "delta_papers": "round(6 * int(Joint_Research_Project == 'Education') + 2 * Talent_Shared + 0.3 * Talent_Index)"
   },
   {
-    "title": "Strategic Ambiguity : Did you lie?",
-    "description": "Misalignment between declared AI standard and geopolitical stance causes trust issues.",
-    "delta_models": "round(3 * (1 - 2 * int((AI_Standard_Alignment == 'US') == (Alignment_China > Alignment_US))))",
-    "delta_papers": "round(20 * (1 - 2 * int((AI_Standard_Alignment == 'US') == (Alignment_China > Alignment_US))))"
+    "title": "Confirmed Alien Presence",
+    "description": "An AI-powered deep-space telescope detects signs of a high-tech civilization near Earth. Countries with relevant **joint research** in **Space** or **Military** benefit from early access, while isolated nations fall behind.",
+    "delta_models": "round(2 * int(Joint_Research_Project in ['Military', 'Space']) - 2 * int(Joint_Research_Project == 'None'))",
+    "delta_papers": "round(10 * int(Joint_Research_Project in ['Space']) - 12 * int(Joint_Research_Project == 'None'))"
   },
   {
-    "title": "Coup in a Tech Superpower",
-    "description": "A sudden coup in a major research hub. Countries with talent mobility and shared research successfully defend.",
-    "delta_models": "round(2 * Talent_Exchange + 1 * Shared_Research_Centers - 2 * int(Open_Source_Adoption < 7))",
-    "delta_papers": "round(15 * Talent_Exchange + 5 * Shared_Research_Centers - 12 * int(Open_Source_Adoption < 5))"
+    "title": "Quantum Disruption Crisis",
+    "description": "A breakthrough in quantum AI shakes global cybersecurity foundations. Countries with weak **IP protection**, low **democratic stability**, and highly exposed **open-source ecosystems** suffer major trust and technological losses.",
+    "delta_models": "round(-2 + 0.3 * IP_Protection_Strength - 0.2 * Open_Source_Adoption + 0.2 * Democratic_Stability_Index)",
+    "delta_papers": "round(-5 + 0.5 * IP_Protection_Strength - 0.3 * Open_Source_Adoption + 0.3 * Democratic_Stability_Index)"
+  },
+  {
+    "title": "Sudden Climate Cascade",
+    "description": "A rapid chain reaction in global climate systems disrupts energy grids. Countries with relevant **joint research** in climate-resilient **materials**, strong **Electricity** infrastructure, and active **emergency pacts** adapt more effectively.",
+    "delta_models": "round(0.5 * int(Joint_Research_Project == 'Materials') + 0.4 * Emergency_Pact_Energy + 0.08 * Electricity - 2 * int(Joint_Research_Project == 'None'))",
+    "delta_papers": "round(1 * Talent_Shared + 1.5 * Data_Shared + 0.1 * Electricity + 0.3 * AI_Fund)"
+  },
+  {
+    "title": "AI Bubble in Stock Market",
+    "description": "A surge in AI-related stocks sparks a global investment frenzy. Countries with strong **AI funding**, stable **governance**, and clear **IP protection** benefit from sustainable growth—others risk destabilization and misallocation.",
+    "delta_models": "round(-1.5 + 0.15 * AI_Fund + 0.1 * IP_Protection_Strength + 0.05 * Democratic_Stability_Index)",
+    "delta_papers": "round(-6.7 + 0.6 * AI_Fund + 0.2 * IP_Protection_Strength + 0.1 * Democratic_Stability_Index)"
   },
   {
     "title": "Cosmic Ray Flip",
     "description": "A high-energy particle flips a transistor during foundation model training, resulting in novel unsupervised capabilities.",
-    "delta_models": "round(3 * min(1, (Semiconductor + Computing_Power_Shared * 10 - 10) / 10))",
-    "delta_papers": "round(20 * min(1, (Semiconductor + Computing_Power_Shared * 10 - 10) / 10))"
+    "delta_models": "round(2 * min(1, (Semiconductor + Electricity + Deployment_Infrastructure - 15) / 10))",
+    "delta_papers": "round(10 * min(1, (Semiconductor + Electricity + Deployment_Infrastructure - 15) / 10))"
+  },
+  {
+    "title": "AI Cyber Defense Triumph",
+    "description": "Cybersecurity cooperation strengthens model integrity and protection. Countries with strong **IP protection**, high **Talent**, and active **data or talent sharing** benefit the most.",
+    "delta_models": "round(0.03 * IP_Protection_Strength + 0.03 * Talent_Index + 1 * int(Data_Shared or Talent_Shared))",
+    "delta_papers": "round(0.1 * IP_Protection_Strength + 0.1 * Talent_Index + 2 * int(Data_Shared) + 1 * int(Talent_Shared))"
+  },
+  {
+    "title": "Tariff Shock on US-Aligned Compute",
+    "description": "The U.S. imposes heavy tariffs on AI-related hardware. **Countries aligned with the U.S. and dependent on shared compute infrastructure suffer most**, while China-aligned nations benefit from the supply chain shift.",
+    "delta_models": "round(-2.0 * int(1 - Emergency_Pact_Semiconductor) * int(Alignment_US > 5) + 1.4 * int(Joint_Research_Standard == 'China'))",
+    "delta_papers": "round(-5 * int(1 - Emergency_Pact_Semiconductor) * int(Alignment_US > 5) + 2 * int(Joint_Research_Standard == 'China') - (Alignment_US - 5) / 2 )"
+  },
+  {
+    "title": "Military Tensions Rise in Taiwan Strait",
+    "description": "Countries aligned with **China** or with **Military research** benefit, while those aligned with the **US** suffer.",
+    "delta_models": "round(1 * (int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard == 'US')) - int(Alignment_US >= 5) + int(Joint_Research_Project == 'Military') )",
+    "delta_papers": "round(- (Alignment_US - 5) / 1.2)"
   },
   {
     "title": "Emergence of a Synthetic Scientist",
-    "description": "An open-source project accidentally creates a self-improving AI that begins publishing novel scientific papers. The public and government are stunned. Some call it the next Newton. Others call it a threat.",
+    "description": "An open-source project accidentally creates a self-improving AI that begins publishing groundbreaking scientific papers. The global public and governments are stunned. *Only those with strong parameters can embrace the breakthrough**—while others impose restrictions, fearing loss of control.",
     "delta_models": "round(3 * min(1, max(0, (Open_Source_Adoption + Talent_Index + AI_Fund - 27) / 6)))",
     "delta_papers": "round(40 * min(1, max(0, (AI_Literacy_Education + IP_Protection_Strength + Democratic_Stability_Index - 27) / 6))) - 10 * int(Dual_Use_Restriction_Strictness > 7)"
-  }  
+  },
+  {
+    "title": "Coup in a Tech Superpower",
+    "description": "A sudden coup disrupts a major AI hub. Nations with **strong talents and IP protection** withstand the shock.",
+    "delta_models": "round(-1 + 1 * Talent_Shared + int(IP_Protection_Strength > 7) - 0.6 * max(0, 7 - Talent_Index))",
+    "delta_papers": "round(-2 + 3 * Talent_Shared + int(IP_Protection_Strength > 6))"
+  },
+  {
+    "title": "Strategic Ambiguity: Did You Lie?",
+    "description": "Contradictions between declared AI standards and policy transparency reduce international credibility.",
+    "delta_models": "round(-1.5 * (10 - Democratic_Stability_Index) * int(Joint_Research_Standard == 'US') / 10 - 1.2 * max(0, Open_Source_Adoption - 6) * int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard is None)*int(Alignment_US == 5))",
+    "delta_papers": "round(-7 * (10 - Democratic_Stability_Index) * int(Joint_Research_Standard == 'US') / 10 - 6 * max(0, Open_Source_Adoption - 6) * int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard is None)*int(Alignment_US == 5))"
+  }
+]
+
+international_events_cooperative = [
+{
+  "title": "Data Dilemma",
+  "description": "The outcome of Data Sharing depends on both your and your partner's commitment to Open Source. Activation parameter : **Data_Shared** / Comparison parameter : **Open_Source_Adoption** ",
+  "evaluation_type": "interactive",
+  "logic": {
+    "type": "dilemma",
+    "activation_param": "Data_Shared",          # 활성화 조건이 되는 협력 파라미터
+    "comparison_param": "Open_Source_Adoption",  # 비교 대상이 되는 정책 파라미터
+    "threshold": 7,                              # 비교 기준값
+    "outcomes": {
+      # A > T, B > T (A와 B 모두 기준값 초과)
+      "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+      # A > T, B <= T
+      "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+      # A <= T, B > T
+      "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+      # A <= T, B <= T
+      "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+    }
+  }
+},
+{
+  "title": "Talent Dilemma",
+  "description": "The outcome of Talent Sharing depends on both your and your partner's commitment to Education Investment. Activation parameter : **Talent_Shared** / Comparison parameter : **Education_Investment**",
+  "evaluation_type": "interactive",
+  "logic": {
+    "type": "dilemma",
+    "activation_param": "Talent_Shared",          # 활성화 조건: Talent_Shared
+    "comparison_param": "Education_Investment",  # 비교 대상: Education_Investment
+    "threshold": 7,                              # 기준값은 동일하게 7로 설정 (원하는 값으로 변경 가능)
+    "outcomes": {                                # 결과 매트릭스는 Data Dilemma와 동일하게 설정
+      "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+      "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+      "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+      "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+    }
+  }
+},
 ]
 
 intel_agencies = {
