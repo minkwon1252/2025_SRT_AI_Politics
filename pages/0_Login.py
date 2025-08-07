@@ -5,6 +5,18 @@ import config
 
 st.set_page_config(layout="centered", page_title="Login")
 
+# Admin page
+st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"] > ul > li:nth-child(8) {
+        border-top: 2px solid #e6e6e6; /* devider */
+        padding-top: 20px; /* space */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+
 # 1. After login
 if st.session_state.get("authenticated_team"):
         

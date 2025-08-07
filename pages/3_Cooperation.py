@@ -10,7 +10,17 @@ import re
 
 st.set_page_config(layout="centered", page_title="Cooperation Phase")
 
-# --- 1. 새로운 파라미터 구조에 맞는 점수 및 매트릭스 계산 함수 ---
+# Admin page
+st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"] > ul > li:nth-child(8) {
+        border-top: 2px solid #e6e6e6; /* devider */
+        padding-top: 20px; /* space */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 1. point and matrix calc ---
 def compute_cooperation_details(state, partners, coop_config, all_keys):
     """
     points and matrix for cooperation agreements.
@@ -102,15 +112,14 @@ coop_limit = 7 + st.session_state.get("hidden_params_Willing_to_Cooperate", 5)
 # =================================================================
 st.sidebar.header("📌 Event Hints")
 
-# --- 1. Domestic Event 힌트 표시 ---
+# --- 1. Domestic Event hint ---
 if st.session_state.get('event_title') and st.session_state.get('domestic_event_hints'):
     st.sidebar.subheader(f"🏠 {st.session_state['event_title']}")
     with st.sidebar.expander("View Domestic Hints"):
         for hint in st.session_state.domestic_event_hints:
             st.info(f"**{hint.replace('_', ' ')}** is a key parameter.")
 
-# --- 2. International Event 힌트 생성 및 표시 ---
-# 힌트가 아직 생성되지 않았을 때만 생성
+# --- 2. International Event hint ---
 if "international_event_hints" not in st.session_state:
     st.session_state.international_event_hints = []
     if "international_events_1_circumstance" in st.session_state:
@@ -118,7 +127,6 @@ if "international_event_hints" not in st.session_state:
         st.session_state.international_event_title = event.get("title", "N/A")
         logic = event.get("logic", {})
 
-        # [수정] Dilemma 타입 이벤트인 경우, 규칙을 직접 표시
         if event.get("evaluation_type") == "interactive" and logic.get("type") == "dilemma":
             st.session_state.international_event_hints = {
                 "type": "dilemma",
@@ -126,7 +134,7 @@ if "international_event_hints" not in st.session_state:
                 "comparison": logic.get("comparison_param", "N/A"),
                 "threshold": logic.get("threshold", "N/A")
             }
-        # 그 외의 경우, 기존처럼 수식에서 파라미터 추출
+
         else:
             formulas = event.get("delta_models", "") + " " + event.get("delta_papers", "")
             if formulas:
@@ -144,13 +152,13 @@ if "international_event_hints" not in st.session_state:
                 else:
                     st.session_state.international_event_hints = relevant_params
 
-# 생성된 International 힌트 표시
+
 if st.session_state.get('international_event_title'):
     st.sidebar.subheader(f"🗺️ {st.session_state['international_event_title']}")
     with st.sidebar.expander("View International Hints"):
         hints = st.session_state.get('international_event_hints')
         
-        # [수정] 힌트 포맷에 따라 다르게 표시
+
         if isinstance(hints, dict) and hints.get("type") == "dilemma":
             st.warning(f"This is a **Dilemma** type event. Your outcome depends on your partner's choice.")
             st.markdown(f"**Activation Rule:**")

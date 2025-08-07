@@ -9,10 +9,9 @@ import utils
 import os
 import time
 
-
 st.set_page_config(layout="centered", page_title="Round Summary")
 
-# --- 0. 로그인 및 기본 설정 ---
+# --- 0. login ---
 if not st.session_state.get("authenticated_team"):
     st.error("Please log in first.")
     if st.button("Go to Login"):
@@ -21,6 +20,18 @@ if not st.session_state.get("authenticated_team"):
 
 my_team = st.session_state.get("authenticated_team")
 all_player_teams = list(config.team_credentials.keys())
+
+# Admin page
+st.markdown("""
+    <style>
+    [data-testid="stSidebarNav"] > ul > li:nth-child(8) {
+        border-top: 2px solid #e6e6e6; /* devider */
+        padding-top: 20px; /* space */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- Explanation -----
 
 st.title("📊 Round Summary & Leaderboard")
 st.markdown("""
@@ -42,8 +53,8 @@ Let’s see how far you've come… and where you must go next.
 st.markdown("---")
 
 
-# --- 1. 데이터 로딩 및 결과 계산 ---
-# 모든 팀의 hidden, cooperation 파라미터를 한 번에 로드
+# --- 1. data loading and calculation ---
+# load all parameters
 all_params = {}
 for team_name in all_player_teams:
     hidden, coop = {}, {}
@@ -59,7 +70,7 @@ for team_name in all_player_teams:
         pass
     all_params[team_name] = {'hidden': hidden, 'coop': coop}
 
-# 라운드 결과 계산
+# round result calculation
 history = utils.load_history()
 current_round_num = len(history) + 1
 st.header(f"🏁 End of Round {current_round_num}")
@@ -84,7 +95,7 @@ for team_name in all_player_teams:
         'delta_details': details
     }
 
-# 미국, 중국 데이터 랜덤 업데이트
+# US and China data update
 us_papers_initial, us_models_initial = initial_scores.get('United States', {}).get('papers', 0), initial_scores.get('United States', {}).get('models', 0)
 us_delta = random.randint(150, 250)
 us_papers_final = us_papers_initial + us_delta
@@ -97,8 +108,7 @@ cn_papers_final = cn_papers_initial + cn_delta
 cn_models_final = utils.calculate_ai_models(cn_papers_final)
 all_results['China'] = {'papers': cn_papers_final, 'models': int(cn_models_final), 'paper_delta': cn_delta, 'model_delta': cn_models_final - cn_models_initial}
 
-# --- 2. UI 렌더링 ---
-# 로그인한 팀의 요약
+# --- 2. UI  ---
 
 # --- Balloon effect for the winner ---
 if all_results:
@@ -120,31 +130,31 @@ with st.expander("🔍 View Detailed Breakdown of Your Growth"):
     if details:
         col1, col2 = st.columns(2)
 
-        # --- 모델 성장 상세 내역 ---
+        # --- Growth Details ---
         with col1:
             st.markdown("##### 🪄 Model Growth Details")
             st.markdown(f"- **From New Papers**: `+{details.get('from_papers_model', 0):.2f}`")
 
-            # 국내 이벤트
+            # Domestic event
             for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
                 st.markdown(f"- Domestic Event {i}: `{event_delta.get('model_delta', 0)}`")
             
-            # 국제 이벤트
+            # International event
             for i, event_delta in enumerate(details.get('international_deltas', []), 1):
                 st.markdown(f"- Intl. Event {i}: `{event_delta.get('model_delta', 0):.2f}`")
 
             st.markdown(f"**Total: `{details.get('total_model_delta', 0):.2f}`**")
         
-        # --- 논문 성장 상세 내역 ---
+        # --- Growth Details ---
         with col2:
             st.markdown("##### 📄 Paper Growth Details")
             st.markdown(f"- **Base Growth**: `{details.get('base_growth', 0)}`")
             
-            # 국내 이벤트
+            # Domestic event
             for i, event_delta in enumerate(details.get('domestic_deltas', []), 1):
                 st.markdown(f"- Domestic Event {i}: `{event_delta.get('paper_delta', 0)}`")
             
-            # 국제 이벤트
+            # International event
             for i, event_delta in enumerate(details.get('international_deltas', []), 1):
                 st.markdown(f"- Intl. Event {i}: `{event_delta.get('paper_delta', 0)}`")
 
@@ -167,7 +177,7 @@ with col2:
     st.metric("Estimated Models", f"{cn_data.get('models', 'N/A'):,}")
 st.markdown("---")
 
-# 리더보드
+# Leaderboard
 st.header("🏆 Leaderboard")
 leaderboard_data = []
 for name, data in all_results.items():
@@ -183,13 +193,13 @@ df_leaderboard.index = df_leaderboard.index + 1
 df_leaderboard.index.name = "Rank"
 st.dataframe(df_leaderboard, use_container_width=True)
 
-# 누적 성장 그래프
+# Graphs
 st.header("📈 Cumulative Growth Trend (Models)")
 
-# 탭을 사용하여 모델 수와 논문 수 그래프 분리
+# tabs for models and papers
 tab1, tab2 = st.tabs(["🪄 Models Growth", "📄 Papers Growth"])
 
-# --- Round 0 (초기값) 데이터 생성 ---
+# --- Round 0 data ---
 round_0_data_models = {'round': 0}
 round_0_data_papers = {'round': 0}
 
@@ -200,20 +210,15 @@ for name, data in config.initial_data.items():
     round_0_data_models[name] = data['models']
     round_0_data_papers[name] = data['papers']
     
-    # 4 Players Sum을 위해 config.team_credentials에 있는 국가들만 합산
-    if name in config.team_credentials: # config.team_credentials에 있는 플레이어 국가들만 합산
+    # 4 Players Sum calculation for SRT
+    if name in config.team_credentials:
         initial_player_sum_models += data['models']
         initial_player_sum_papers += data['papers']
 
-# '4 Players Sum' 데이터를 Round 0에 추가
 round_0_data_models['4 Players Sum'] = initial_player_sum_models
 round_0_data_papers['4 Players Sum'] = initial_player_sum_papers
 
-# 'United States'와 'China' 데이터도 Round 0에 포함
-# config.initial_data에서 직접 가져오므로 별도 처리 불필요 (이미 위 루프에서 포함됨)
-# 다만, ensure that these are always included even if not explicitly in config.team_credentials
-# 이전에 미국/중국을 따로 합산하던 로직이 있다면 이 부분은 initial_data를 기준으로 한번에 처리합니다.
-# 안전을 위해 한 번 더 명시적으로 확인:
+# 'United States' 'China' data for round 0
 if 'United States' not in round_0_data_models:
     round_0_data_models['United States'] = config.initial_data.get('United States', {}).get('models', 0)
     round_0_data_papers['United States'] = config.initial_data.get('United States', {}).get('papers', 0)
@@ -222,19 +227,19 @@ if 'China' not in round_0_data_models:
     round_0_data_papers['China'] = config.initial_data.get('China', {}).get('papers', 0)
 
 
-# 차트 데이터 리스트에 라운드 0을 먼저 추가
+# append round 0 data
 chart_data_models = [round_0_data_models]
 chart_data_papers = [round_0_data_papers]
 
-# 현재까지의 기록을 차트 데이터에 추가 (기존 로직 유지)
+# append current round
 new_round_to_save = {
     "round": current_round_num,
     "scores": all_results
 }
-current_history = history + [new_round_to_save] # 이 부분은 save_history 호출 전에만 사용
+current_history = history + [new_round_to_save]
 
-for round_data in current_history: # 이 루프는 이미 저장된 history와 현재 라운드 결과 all_results를 합친 것
-    # Round 0은 이미 위에서 추가되었으므로, round_num이 0인 경우는 건너뜁니다.
+for round_data in current_history: # for all round
+
     if round_data['round'] == 0:
         continue 
         
@@ -245,14 +250,12 @@ for round_data in current_history: # 이 루프는 이미 저장된 history와 �
     row_papers = {'round': round_num}
     
     player_sum_models, player_sum_papers = 0, 0
-    # 모든 국가에 대해 데이터 추가
-    all_countries_for_chart = list(config.team_credentials.keys()) + ["United States", "China"] # 그래프에 포함할 모든 국가
+    # add data for all country
+    all_countries_for_chart = list(config.team_credentials.keys()) + ["United States", "China"]
     for name in all_countries_for_chart:
-        # scores 딕셔너리에 해당 국가의 데이터가 있는지 확인하고 가져옵니다.
         row_models[name] = scores.get(name, {}).get('models', 0)
         row_papers[name] = scores.get(name, {}).get('papers', 0)
         
-        # '4 Players Sum'에는 config.team_credentials에 있는 플레이어 국가들만 합산
         if name in config.team_credentials:
             player_sum_models += row_models[name]
             player_sum_papers += row_papers[name]
@@ -263,59 +266,53 @@ for round_data in current_history: # 이 루프는 이미 저장된 history와 �
     chart_data_models.append(row_models)
     chart_data_papers.append(row_papers)
 
-# --- Models Growth 탭 ---
+# --- Models Growth ---
 with tab1:
     if chart_data_models:
         df_models = pd.DataFrame(chart_data_models).set_index('round')
         
-        # 범례 순서 지정: United States, China, 4 Players Sum이 먼저 오도록
-        # config.team_credentials에 있는 플레이어 국가들을 동적으로 추가합니다.
-        player_countries_sorted = sorted(config.team_credentials.keys()) # 알파벳 순 정렬 등 필요시 변경
+        player_countries_sorted = sorted(config.team_credentials.keys())
         legend_order = ["United States", "China", "4 Players Sum"] + player_countries_sorted
         
-        # 실제 df_models에 존재하는 컬럼만 선택하여 순서를 맞춥니다.
         legend_order = [col for col in legend_order if col in df_models.columns]
 
         df_models = df_models[legend_order]
         
-        # Plotly 그래프 생성
+        # Plotly graph
         fig_models = go.Figure()
         for country in df_models.columns:
             fig_models.add_trace(go.Scatter(x=df_models.index, y=df_models[country],
                                             mode='lines+markers', name=country))
         
-        # X축 범위와 틱(tick) 설정
+        # X axis range and tick
         fig_models.update_layout(
             xaxis=dict(
                 title="Round",
-                range=[0, current_round_num + 2],  # 현재 라운드 + 2 만큼 여유 공간
+                range=[0, current_round_num + 2],  # +2 space
                 tickmode='linear',
                 tick0=0,
-                dtick=1  # 1단위로 정수 틱만 표시
+                dtick=1  # only natural numbers
             ),
             yaxis_title="Number of Models",
             legend_title="Country"
         )
         st.plotly_chart(fig_models, use_container_width=True)
 
-# --- Papers Growth 탭 ---
+# --- Papers Growth tab---
 with tab2:
     if chart_data_papers:
         df_papers = pd.DataFrame(chart_data_papers).set_index('round')
         
-        # 범례 순서 지정: Models Growth 탭과 동일하게 적용
         legend_order = ["United States", "China", "4 Players Sum"] + player_countries_sorted
         legend_order = [col for col in legend_order if col in df_papers.columns]
         
         df_papers = df_papers[legend_order]
         
-        # Plotly 그래프 생성
         fig_papers = go.Figure()
         for country in df_papers.columns:
             fig_papers.add_trace(go.Scatter(x=df_papers.index, y=df_papers[country],
                                             mode='lines+markers', name=country))
                                             
-        # X축 범위와 틱(tick) 설정
         fig_papers.update_layout(
             xaxis=dict(
                 title="Round",
@@ -329,7 +326,7 @@ with tab2:
         )
         st.plotly_chart(fig_papers, use_container_width=True)
 
-# 발생한 이벤트 목록
+# Event lists
 st.markdown("---")
 st.header("🔔 Events This Round")
 
@@ -347,17 +344,14 @@ with st.expander(f"🏠 Domestic Events in {my_team}"):
                     for i, event in enumerate(all_domestic_events, 1):
                         st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
                         
-                        # --- 수정된 부분: 첫 문장만 추출 ---
+                        # --- first sentence ---
                         description = event.get('description', 'N/A')
                         
-                        # 문장 끝을 나타내는 ., ?, ! 중 가장 먼저 나오는 위치를 찾음
                         end_indices = [idx for idx in [description.find('.'), description.find('?'), description.find('!')] if idx != -1]
                         
                         if end_indices:
-                            # 가장 첫 번째 문장 종결 부호까지 잘라냄
                             first_sentence = description[:min(end_indices) + 1]
                         else:
-                            # 문장 부호가 없으면 전체를 첫 문장으로 간주
                             first_sentence = description
                         
                         st.write(first_sentence)
@@ -380,18 +374,15 @@ with st.expander("🌍 International Events"):
                     for i, event in enumerate(all_international_events, 1):
                         st.markdown(f"**Event {i}: {event.get('title', 'N/A')}**")
                         
-                        # Description의 첫 문장만 표기
+                        # Description's first sentence'
                         description = event.get('description', 'N/A')
                         end_indices = [idx for idx in [description.find('.'), description.find('?'), description.find('!')] if idx != -1]
                         first_sentence = description[:min(end_indices) + 1] if end_indices else description
                         st.write(first_sentence)
 
-                        # --- 수정된 부분: 효과 요약 및 수식 숨기기 ---
-                        # 1. 효과 요약을 먼저 보여줍니다.
                         if event.get("effect_summary"):
                             st.info(f"💡 Parameters : {event.get('effect_summary')}")
                         
-                        # 2. Popover 버튼 안에 복잡한 수식을 숨깁니다.
                         with st.popover("⚙️ Equations for this event"):
                             if event.get("delta_papers"):
                                 st.code(f"Paper Δ: {event.get('delta_papers')}", language="python")
@@ -406,7 +397,7 @@ with st.expander("🌍 International Events"):
     except Exception as e:
         st.error(f"An error occurred while loading international events: {e}")
 
-# 인용구 및 다음 라운드 버튼
+# Next round
 st.markdown("---")
 st.markdown("""
 > *"China is not behind, they are right there with us... Remember, this is not a sprint, it's an infinite race. This is a country with a great will, and we will be competing for a long time."*
@@ -423,7 +414,7 @@ if st.button("🚀 Start Next Round", type="primary"):
     st.toast("Clearing data for the new round...")
     files_to_clear = [config.shared_dir / "international.json"]
     
-    # domestic 파일과 cooperation 파일을 모두 삭제하도록 주석 해제
+    # revise if you want to 
     for country_name in all_player_teams:
         files_to_clear.append(config.shared_dir / f"domestic_{country_name}.json")
         #files_to_clear.append(config.shared_dir / f"cooperation_{country_name}.json")
