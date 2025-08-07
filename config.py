@@ -517,7 +517,7 @@ domestic_events = {
 # International events
 # ---------------------------------------------------------------
 
-international_events1 = [
+international_events = [
     {
     "title": "Global Financial Crisis",
     "description": "Economic instability drives nations to prioritize domestic spending, slashing Cooperative projects.",
