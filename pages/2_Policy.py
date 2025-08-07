@@ -4,8 +4,8 @@ import time
 import json
 import config
 import utils
-import random  # [MODIFICATION] 힌트 생성을 위해 추가
-import re      # [MODIFICATION] 힌트 생성을 위해 추가
+import random
+import re
 
 st.set_page_config(layout="centered", page_title="Policy Parameters")
 
@@ -24,9 +24,8 @@ if 'last_growth_rate' not in st.session_state:
     st.session_state.last_growth_rate = None
 
 # =================================================================
-# [MODIFICATION START] 사이드바 이벤트 힌트
+# Sidebar Event hint
 # =================================================================
-st.sidebar.divider()
 st.sidebar.header("📌 Event Hints")
 
 # --- 1. Domestic Event 힌트 표시 ---
@@ -43,36 +42,57 @@ if "international_event_hints" not in st.session_state:
     if "international_events_1_circumstance" in st.session_state:
         event = st.session_state.international_events_1_circumstance[0]
         st.session_state.international_event_title = event.get("title", "N/A")
-        
-        formulas = event.get("delta_models", "") + " " + event.get("delta_papers", "")
-        
-        if formulas:
-            params_in_formulas = set(re.findall(r'\b[A-Za-z_]+\b', formulas))
-            keywords = {'if', 'else', 'round', 'log', 'exp', 'min', 'max', 'int', 'np', 'sqrt', 'True', 'False', 'and', 'or', 'not'}
-            
-            all_possible_params = (
-                set(config.parameter_descriptions.keys()) |
-                set(config.fixed_values.get(team, {}).keys()) |
-                set(config.coop_param_keys)
-            )
-            
-            relevant_params = [p for p in params_in_formulas if p in all_possible_params and p not in keywords]
-            
-            if len(relevant_params) > 2:
-                st.session_state.international_event_hints = random.sample(relevant_params, 2)
-            else:
-                st.session_state.international_event_hints = relevant_params
+        logic = event.get("logic", {})
+
+        # [수정] Dilemma 타입 이벤트인 경우, 규칙을 직접 표시
+        if event.get("evaluation_type") == "interactive" and logic.get("type") == "dilemma":
+            st.session_state.international_event_hints = {
+                "type": "dilemma",
+                "activation": logic.get("activation_param", "N/A"),
+                "comparison": logic.get("comparison_param", "N/A"),
+                "threshold": logic.get("threshold", "N/A")
+            }
+        # 그 외의 경우, 기존처럼 수식에서 파라미터 추출
+        else:
+            formulas = event.get("delta_models", "") + " " + event.get("delta_papers", "")
+            if formulas:
+                params_in_formulas = set(re.findall(r'\b[A-Za-z_]+\b', formulas))
+                keywords = {'if', 'else', 'round', 'log', 'exp', 'min', 'max', 'int', 'np', 'sqrt', 'True', 'False', 'and', 'or', 'not'}
+                all_possible_params = (
+                    set(config.parameter_descriptions.keys()) |
+                    set(config.fixed_values.get(team, {}).keys()) |
+                    set(config.coop_param_keys)
+                )
+                relevant_params = [p for p in params_in_formulas if p in all_possible_params and p not in keywords]
+                
+                if len(relevant_params) > 2:
+                    st.session_state.international_event_hints = random.sample(relevant_params, 2)
+                else:
+                    st.session_state.international_event_hints = relevant_params
 
 # 생성된 International 힌트 표시
-if st.session_state.get('international_event_title') and st.session_state.get('international_event_hints'):
+if st.session_state.get('international_event_title'):
     st.sidebar.subheader(f"🗺️ {st.session_state['international_event_title']}")
     with st.sidebar.expander("View International Hints"):
-        for hint in st.session_state.international_event_hints:
-            st.warning(f"**{hint.replace('_', ' ')}** is a key parameter.")
+        hints = st.session_state.get('international_event_hints')
+        
+        # [수정] 힌트 포맷에 따라 다르게 표시
+        if isinstance(hints, dict) and hints.get("type") == "dilemma":
+            st.warning(f"This is a **Dilemma** type event. Your outcome depends on your partner's choice.")
+            st.markdown(f"**Activation Rule:**")
+            st.code(f"{hints.get('activation')}", language="python")
+            st.markdown(f"**Comparison Parameter:** `{hints.get('comparison')}`")
+            st.markdown(f"**Threshold:** `{hints.get('threshold')}`")
+        elif isinstance(hints, list) and hints:
+            for hint in hints:
+                st.warning(f"**{hint.replace('_', ' ')}** is a key parameter.")
+        else:
+            st.info("No specific parameter hints for this event.")
+
 
 st.sidebar.divider()
 # =================================================================
-# [MODIFICATION END] 사이드바 이벤트 힌트
+# [SIDEBAR HINT END]
 # =================================================================
 
 
