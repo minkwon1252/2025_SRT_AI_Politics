@@ -4,7 +4,7 @@ import numpy as np
 import math
 import random
 from scipy.stats import norm
-import config # config.py file
+import config
 import json
 import pandas as pd
 import altair as alt
@@ -74,7 +74,7 @@ def evaluate_delta(expr: str, params: dict) -> int:
         return 0
 
 def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> int:
-    # --- 디버깅 코드 시작 ---
+    # --- debuging code ---
     #st.warning(f"--- 🕵️ 디버깅 시작: 국제 이벤트 계산 ---")
     #st.write(f"**계산 공식:** `{expr}`")
     
@@ -84,7 +84,7 @@ def evaluate_event_international(expr: str, hidden: dict, coop_dict: dict) -> in
         combined = {**hidden, **bilateral}
         delta_for_partner = evaluate_delta(expr, combined)
         
-        # 각 파트너별 계산 결과를 화면에 출력
+        # for each partners
         #st.write(f"- 파트너 **{country}**에 공식 적용 결과: **`{delta_for_partner}`**")
         
         total += delta_for_partner
@@ -111,7 +111,7 @@ def compute_growth_rate(params, fixed):
         return None
 
 
-# 사용자의 compute_growth_rate 함수 (여기에 그대로 두거나 import)
+# compute_growth_rate
 PARAMETER_TERM_MAP = {
     "Semiconductor": "Technical",
     "Electricity": "Technical",
@@ -202,7 +202,7 @@ def sigmoid(x):
 def intel_accuracy_prob(intelligence):
     return 0.4 * sigmoid(1.5 * (intelligence - 5)) + 0.5
 
-# ——— hidden parameter 범위 정보 생성 ———
+# ——— hidden parameter range gen intel ———
 
 def get_hidden_param_info(param_name, true_val, intel_score):
     if intel_score < 1:
@@ -254,9 +254,9 @@ def get_hidden_param_info(param_name, true_val, intel_score):
         return f"{param_name}: {fake_val} (Approximate, {confidence})"
 
 
-# ——— cooperative parameter 정보 생성 ———
+# ——— cooperative parameter gen intel ———
 def get_coop_info(param, true_val, intel_score, options=None):
-    # 자동 추론: options가 없으면 param 이름 기반으로 유추
+
     if options is None:
         if param == "Joint_Project":
             options = ["None", "Energy", "Military", "Education", "Space", "Materials"]
@@ -291,7 +291,6 @@ def parse_dilemma_papers(outcome_str, val_a, val_b):
         total += val_b if "+B" in outcome_str or "B" == outcome_str else -val_b
     return total
 
-# utils.py의 calculate_round_results 함수만 교체
 
 def calculate_round_results(team_name: str, initial_papers: int, initial_models: int, growth_rate: int, all_params: dict) -> tuple[tuple[int, int], dict]:
     """
@@ -305,7 +304,7 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
     team_fixed_values = config.fixed_values.get(team_name, {})
     evaluation_params = {**team_fixed_values, **hidden_params}
     
-    # GDP, 천연자원 값 매핑 (기존과 동일)
+    # GDP, Resoure Mapping
     gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0}
     if "GDP" in evaluation_params and isinstance(evaluation_params["GDP"], str):
         evaluation_params["GDP_value"] = gdp_map.get(evaluation_params["GDP"], 0)
@@ -313,7 +312,7 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
     if "Natural_Resource_Reserves" in evaluation_params and "Resource_value" not in evaluation_params:
          evaluation_params["Resource_value"] = nat_resource_map.get(evaluation_params["Natural_Resource_Reserves"], 0)
 
-    # 국내 이벤트 처리 (기존과 동일)
+    # Domestic event
     domestic_event_file_path = config.shared_dir / f"domestic_{team_name}.json"
     if os.path.exists(domestic_event_file_path):
         try:
@@ -328,7 +327,7 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
         except (json.JSONDecodeError, IndexError):
             pass
 
-    # --- [핵심 수정] 범용 국제 이벤트 처리 로직 ---
+    # --- International event ---
     international_event_file = config.shared_dir / "international.json"
     if os.path.exists(international_event_file):
         with open(international_event_file, "r") as f:
@@ -342,11 +341,10 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
                 logic = event["logic"]
                 team_a_name = team_name
                 
-                # A 국가의 파트너들을 순회하며 B 국가로 설정
+                # define partner as B
                 for team_b_name in coop_params_raw.keys():
                     if team_b_name not in all_params: continue
 
-                    # [수정] A, B 각 팀의 모든 파라미터를 포함하는 범용 컨텍스트 생성
                     team_a_proposal_for_b = coop_params_raw.get(team_b_name, {})
                     team_a_context = {**team_fixed_values, **hidden_params, **team_a_proposal_for_b, 'True': True, 'False': False, 'None': None}
 
@@ -356,7 +354,6 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
                     team_b_proposal_for_a = team_b_coop_raw.get(team_a_name, {})
                     team_b_context = {**team_b_fixed, **team_b_hidden, **team_b_proposal_for_a, 'True': True, 'False': False, 'None': None}
 
-                    # [수정] eval()을 사용하여 조건문/단순 키 모두 안정적으로 처리
                     try:
                         activation_str = logic["activation_param"]
                         is_active_a = eval(activation_str, {}, team_a_context)
@@ -367,22 +364,19 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
                     if not (is_active_a and is_active_b): 
                         continue
 
-                    # [수정] 범용 컨텍스트에서 비교 파라미터 값 가져오기
                     val_a = team_a_context.get(logic["comparison_param"], 0)
                     val_b = team_b_context.get(logic["comparison_param"], 0)
                     threshold = logic["threshold"]
                     
-                    # 2x2 매트릭스 quadrant 결정
                     if val_a > threshold and val_b > threshold: outcome_key = "high_high"
                     elif val_a > threshold and val_b <= threshold: outcome_key = "high_low"
                     elif val_a <= threshold and val_b > threshold: outcome_key = "low_high"
                     else: outcome_key = "low_low"
                     
-                    # A 국가(team_name)에 대한 결과 계산
+                    # outcome for A
                     outcome_for_a = logic["outcomes"][outcome_key].get("A", {})
                     model_d += outcome_for_a.get("models", 0)
 
-                    # [수정] 기존 parse_dilemma_papers 대신 eval()로 유연하게 계산
                     try:
                         paper_formula = str(outcome_for_a.get("papers", "0"))
                         paper_context = {'A': val_a, 'B': val_b}
@@ -390,14 +384,14 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
                     except Exception:
                         paper_d += 0
             
-            else: # 일반 또는 글로벌 이벤트 (기존 로직 유지)
+            else: # non-dilemma type
                 paper_d = evaluate_event_international(event.get("delta_papers", "0"), hidden_params, coop_params_raw)
                 model_d = evaluate_event_international(event.get("delta_models", "0"), hidden_params, coop_params_raw)
             
             if paper_d != 0 or model_d != 0:
                 international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
 
-    # 전체 델타 합산 및 최종 결과 반환 (기존과 동일)
+    # Sum them up
     total_paper_delta = growth_rate + sum(d['paper_delta'] for d in domestic_deltas) + sum(d['paper_delta'] for d in international_deltas)
     final_papers = max(0, initial_papers + total_paper_delta)
     new_models_from_papers = calculate_ai_models(final_papers) - calculate_ai_models(initial_papers)
@@ -420,7 +414,6 @@ def load_history():
 def save_history(new_round_data):
     """기존 기록에 현재 라운드 데이터를 추가하여 저장합니다."""
     history = load_history()
-    # 같은 라운드 번호가 이미 있는지 확인하여 중복 저장을 방지
     if not any(d['round'] == new_round_data['round'] for d in history):
         history.append(new_round_data)
         history_file = config.shared_dir / "history.json"

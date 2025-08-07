@@ -2,21 +2,36 @@
 import streamlit as st
 from datetime import datetime
 
-# 페이지 기본 설정
+# page config
 st.set_page_config(
     page_title="SRT AI Politics",
     page_icon="🏛️",
     layout="centered"
 )
 
-# 세션 상태 초기화 (로그인 페이지로 리디렉션하기 위함)
+
+st.markdown("""
+    <style>
+    /* [data-testid="stSidebarNav"]는 사이드바 전체를 의미합니다. */
+    /* ul > li:nth-child(8)는 8번째 목록 항목을 선택합니다. */
+    [data-testid="stSidebarNav"] > ul > li:nth-child(8) {
+        margin-top: 20px; /* 위쪽에 여백을 줍니다 */
+        border-top: 2px solid #e6e6e6; /* 회색 구분선을 추가합니다 */
+        padding-top: 20px; /* 구분선과 메뉴 이름 사이의 간격을 줍니다 */
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+
+# go to login if not in session
 if "page" not in st.session_state:
     st.session_state.page = "login"
 
 if "authenticated_team" not in st.session_state:
     st.switch_page("pages/0_Login.py")
 
-# 메인 페이지 콘텐츠
+# Main Page contents
 st.title(f"🏛️ SRT - AI Session Politics")
 st.markdown(f"Welcome back, **Team {st.session_state.get('authenticated_team', 'Unknown')}**!")
 st.markdown("""

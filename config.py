@@ -206,12 +206,7 @@ domestic_events = {
         "description": "Slow policy execution results in outdated or optional AI content in schools, weakening future talent pipelines. When AI_Literacy_Education is low and Education_Investment or Talent_Index are insufficient, students lack early exposure to foundational AI concepts. In 2025, Korea is currently facing this issue, with AI textbooks.",
         "delta_models": "round(-0.8 * (1-AI_Literacy_Education/20))",
         "delta_papers": "-8 * (1 - (Education_Investment + Talent_Index)/ 20)"
-    },    24: {
-        "title": "GPU Allocation Scandal",
-        "description": "Reports tell that high-end GPUs were distributed to unrelated industries due to corrupt senates.",
-        "delta_models": "round(-1.2 * (1 - Democratic_Stability_Index / 11))",
-        "delta_papers": "round(-2 * (1 - AI_Literacy_Education / 10))"
-    },
+    },    
     11: {
         "title": "Restriction on AI-Generated Content",
         "description": "New laws place limits on synthetic media, indirectly affecting AI model development. When Dual_Use_Restriction_Strictness is high—especially alongside low Talent_Index or Open_Source_Adoption—these regulations can chill research and creative exploration. Real-world examples include Italy’s temporary ban on ChatGPT and proposed EU rules on deepfakes, which have raised concerns about overregulation stifling AI progress.",
@@ -292,9 +287,9 @@ domestic_events = {
     },
     24: {
         "title": "GPU Allocation Scandal",
-        "description": "A major corruption scandal reveals that high-performance GPUs meant for AI R&D were redirected to unrelated or politically favored sectors. Public outrage grows, but lack of democratic oversight and AI education limits accountability and reform. As a result, AI research progress grinds to a halt. Democraticity and AI Literacy Education are key factors in determining the impact of this event.",
-        "delta_models": "round(-2.2 * (1 - Democratic_Stability_Index / 11))",
-        "delta_papers": "round(-16 * (1 - AI_Literacy_Education / 10))"
+        "description": "Reports tell that high-end GPUs were distributed to unrelated industries due to corrupt senates.",
+        "delta_models": "round(-1.2 * (1 - Democratic_Stability_Index / 11))",
+        "delta_papers": "round(-2 * (1 - AI_Literacy_Education / 10))"
     },
     25: {
         "title": "AI Fellowship Program Canceled",
@@ -540,7 +535,7 @@ international_events = [
     "title": "Talent Exodus to Rival Blocs",
     "description": "Researchers move to the US and China with better offers. Countries lacking talent exchange programs and low education investment suffer the most.",
     "delta_models": "(1 - Talent_Shared) * int(Education_Investment < 7) * round(-2 * (1.1 - Labor) - 0.4)",
-    "delta_papers": " max((1 - Talent_Shared), int(Education_Investment < 7)) * (10 - Education_Investment))"
+    "delta_papers": " max((1 - Talent_Shared), int(Education_Investment < 7)) * (10 - Education_Investment)"
   },
     {
     "title": "AI Chip Export Ban by US Allies",
@@ -781,7 +776,7 @@ international_events = [
     "title": "Coup in a Tech Superpower",
     "description": "A sudden coup disrupts a major AI hub. Nations with **strong talents and IP protection** withstand the shock.",
     "delta_models": "round(-1 + 1 * Talent_Shared + int(IP_Protection_Strength > 7) - 0.6 * max(0, 7 - Talent_Index))",
-    "delta_papers": "round(-2 + 3 * Talent_Shared + int(IP_Protection_Strength > 6))"
+    "delta_papers": "round(-1 + 3 * Talent_Shared + int(IP_Protection_Strength > 6))"
   },
   {
     "title": "Strategic Ambiguity: Did You Lie?",
