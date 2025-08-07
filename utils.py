@@ -291,9 +291,11 @@ def parse_dilemma_papers(outcome_str, val_a, val_b):
         total += val_b if "+B" in outcome_str or "B" == outcome_str else -val_b
     return total
 
+# utils.py의 calculate_round_results 함수만 교체
+
 def calculate_round_results(team_name: str, initial_papers: int, initial_models: int, growth_rate: int, all_params: dict) -> tuple[tuple[int, int], dict]:
     """
-    한 팀의 라운드 결과를 계산합니다. (모든 이벤트 유형을 한 번에 처리)
+    한 팀의 라운드 결과를 계산합니다. (모든 이벤트 유형을 한 번에 처리하도록 수정됨)
     """
     hidden_params = all_params.get(team_name, {}).get('hidden', {})
     coop_params_raw = all_params.get(team_name, {}).get('coop', {})
@@ -303,7 +305,7 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
     team_fixed_values = config.fixed_values.get(team_name, {})
     evaluation_params = {**team_fixed_values, **hidden_params}
     
-    # (gdp_map, nat_resource_map 처리 부분은 기존과 동일)
+    # GDP, 천연자원 값 매핑 (기존과 동일)
     gdp_map = {"Low": 0.2, "Medium": 0.6, "High": 1.0}
     if "GDP" in evaluation_params and isinstance(evaluation_params["GDP"], str):
         evaluation_params["GDP_value"] = gdp_map.get(evaluation_params["GDP"], 0)
@@ -338,26 +340,36 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
 
             if event_type == "interactive" and "logic" in event:
                 logic = event["logic"]
-                # team_name을 A 국가로 설정
-                team_a_coop = coop_params_raw
-                team_a_hidden = hidden_params
+                team_a_name = team_name
                 
                 # A 국가의 파트너들을 순회하며 B 국가로 설정
-                for team_b_name in team_a_coop.keys():
+                for team_b_name in coop_params_raw.keys():
                     if team_b_name not in all_params: continue
 
-                    team_b_coop = all_params.get(team_b_name, {}).get('coop', {})
+                    # [수정] A, B 각 팀의 모든 파라미터를 포함하는 범용 컨텍스트 생성
+                    team_a_proposal_for_b = coop_params_raw.get(team_b_name, {})
+                    team_a_context = {**team_fixed_values, **hidden_params, **team_a_proposal_for_b, 'True': True, 'False': False, 'None': None}
+
                     team_b_hidden = all_params.get(team_b_name, {}).get('hidden', {})
+                    team_b_coop_raw = all_params.get(team_b_name, {}).get('coop', {})
+                    team_b_fixed = config.fixed_values.get(team_b_name, {})
+                    team_b_proposal_for_a = team_b_coop_raw.get(team_a_name, {})
+                    team_b_context = {**team_b_fixed, **team_b_hidden, **team_b_proposal_for_a, 'True': True, 'False': False, 'None': None}
 
-                    # 활성화 조건 확인
-                    is_active = team_a_coop.get(team_b_name, {}).get(logic["activation_param"], False) and \
-                                team_b_coop.get(team_name, {}).get(logic["activation_param"], False)
+                    # [수정] eval()을 사용하여 조건문/단순 키 모두 안정적으로 처리
+                    try:
+                        activation_str = logic["activation_param"]
+                        is_active_a = eval(activation_str, {}, team_a_context)
+                        is_active_b = eval(activation_str, {}, team_b_context)
+                    except Exception:
+                        is_active_a, is_active_b = False, False
                     
-                    if not is_active: continue
+                    if not (is_active_a and is_active_b): 
+                        continue
 
-                    # 비교 파라미터 값 가져오기
-                    val_a = team_a_hidden.get(logic["comparison_param"], 0)
-                    val_b = team_b_hidden.get(logic["comparison_param"], 0)
+                    # [수정] 범용 컨텍스트에서 비교 파라미터 값 가져오기
+                    val_a = team_a_context.get(logic["comparison_param"], 0)
+                    val_b = team_b_context.get(logic["comparison_param"], 0)
                     threshold = logic["threshold"]
                     
                     # 2x2 매트릭스 quadrant 결정
@@ -366,16 +378,24 @@ def calculate_round_results(team_name: str, initial_papers: int, initial_models:
                     elif val_a <= threshold and val_b > threshold: outcome_key = "low_high"
                     else: outcome_key = "low_low"
                     
-                    # A 국가에 대한 결과 계산
-                    outcome_for_a = logic["outcomes"][outcome_key]["A"]
+                    # A 국가(team_name)에 대한 결과 계산
+                    outcome_for_a = logic["outcomes"][outcome_key].get("A", {})
                     model_d += outcome_for_a.get("models", 0)
-                    paper_d += parse_dilemma_papers(outcome_for_a.get("papers", 0), val_a, val_b)
+
+                    # [수정] 기존 parse_dilemma_papers 대신 eval()로 유연하게 계산
+                    try:
+                        paper_formula = str(outcome_for_a.get("papers", "0"))
+                        paper_context = {'A': val_a, 'B': val_b}
+                        paper_d += round(eval(paper_formula, {}, paper_context))
+                    except Exception:
+                        paper_d += 0
             
-            else: # 일반 또는 글로벌 이벤트
+            else: # 일반 또는 글로벌 이벤트 (기존 로직 유지)
                 paper_d = evaluate_event_international(event.get("delta_papers", "0"), hidden_params, coop_params_raw)
                 model_d = evaluate_event_international(event.get("delta_models", "0"), hidden_params, coop_params_raw)
             
-            international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
+            if paper_d != 0 or model_d != 0:
+                international_deltas.append({"title": event.get("title"), "paper_delta": paper_d, "model_delta": model_d})
 
     # 전체 델타 합산 및 최종 결과 반환 (기존과 동일)
     total_paper_delta = growth_rate + sum(d['paper_delta'] for d in domestic_deltas) + sum(d['paper_delta'] for d in international_deltas)

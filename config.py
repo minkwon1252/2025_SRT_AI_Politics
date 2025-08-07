@@ -517,7 +517,7 @@ domestic_events = {
 # International events
 # ---------------------------------------------------------------
 
-international_events = [
+international_events1 = [
     {
     "title": "Global Financial Crisis",
     "description": "Economic instability drives nations to prioritize domestic spending, slashing Cooperative projects.",
@@ -788,48 +788,267 @@ international_events = [
     "description": "Contradictions between declared AI standards and policy transparency reduce international credibility.",
     "delta_models": "round(-1.5 * (10 - Democratic_Stability_Index) * int(Joint_Research_Standard == 'US') / 10 - 1.2 * max(0, Open_Source_Adoption - 6) * int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard is None)*int(Alignment_US == 5))",
     "delta_papers": "round(-7 * (10 - Democratic_Stability_Index) * int(Joint_Research_Standard == 'US') / 10 - 6 * max(0, Open_Source_Adoption - 6) * int(Joint_Research_Standard == 'China') - int(Joint_Research_Standard is None)*int(Alignment_US == 5))"
-  }
-]
-
-international_events_cooperative = [
-{
-  "title": "Data Dilemma",
-  "description": "The outcome of Data Sharing depends on both your and your partner's commitment to Open Source. Activation parameter : **Data_Shared** / Comparison parameter : **Open_Source_Adoption** ",
-  "evaluation_type": "interactive",
-  "logic": {
-    "type": "dilemma",
-    "activation_param": "Data_Shared",          # 활성화 조건이 되는 협력 파라미터
-    "comparison_param": "Open_Source_Adoption",  # 비교 대상이 되는 정책 파라미터
-    "threshold": 7,                              # 비교 기준값
-    "outcomes": {
-      # A > T, B > T (A와 B 모두 기준값 초과)
-      "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
-      # A > T, B <= T
-      "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
-      # A <= T, B > T
-      "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
-      # A <= T, B <= T
-      "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+  },
+  ## ---------------------- Dilemma Type International event --------------------------
+  {
+    "title": "Data Dilemma",
+    "description": "The outcome of **Data Sharing** depends on both your and your partner's commitment to Open Source. Activation parameter : **Data_Shared** / Comparison parameter : **Open_Source_Adoption** ",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Data_Shared",          # 활성화 조건이 되는 협력 파라미터
+      "comparison_param": "Open_Source_Adoption",  # 비교 대상이 되는 정책 파라미터
+      "threshold": 7,                              # 비교 기준값
+      "outcomes": {
+        # A > T, B > T (A와 B 모두 기준값 초과)
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        # A > T, B <= T
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+        # A <= T, B > T
+        "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        # A <= T, B <= T
+        "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+      }
     }
-  }
-},
-{
-  "title": "Talent Dilemma",
-  "description": "The outcome of Talent Sharing depends on both your and your partner's commitment to Education Investment. Activation parameter : **Talent_Shared** / Comparison parameter : **Education_Investment**",
-  "evaluation_type": "interactive",
-  "logic": {
-    "type": "dilemma",
-    "activation_param": "Talent_Shared",          # 활성화 조건: Talent_Shared
-    "comparison_param": "Education_Investment",  # 비교 대상: Education_Investment
-    "threshold": 7,                              # 기준값은 동일하게 7로 설정 (원하는 값으로 변경 가능)
-    "outcomes": {                                # 결과 매트릭스는 Data Dilemma와 동일하게 설정
-      "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
-      "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
-      "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
-      "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+  },
+  {
+    "title": "Talent Dilemma",
+    "description": "The outcome of **Talent Sharing** depends on both your and your partner's commitment to Talent_Index. Activation parameter : **Talent_Shared** / Comparison parameter : **Talent_Index**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Talent_Shared",          # 활성화 조건: Talent_Shared
+      "comparison_param": "Talent_Index",  # 비교 대상: Talent_Index
+      "threshold": 7,                              # 기준값은 동일하게 7로 설정 (원하는 값으로 변경 가능)
+      "outcomes": {                                # 결과 매트릭스는 Data Dilemma와 동일하게 설정
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
     }
-  }
-},
+  },
+  {
+    "title": "Chip Dilemma",
+    "description": "The outcome of **Semiconductor pact** depends on both your and your partner's commitment to chips. Activation parameter : **Emergency_Pact_Semiconductor** / Comparison parameter : **Semiconductor**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Emergency_Pact_Semiconductor",          
+      "comparison_param": "Semiconductor",  
+      "threshold": 7,                              
+      "outcomes": {                                
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Energy Dilemma",
+    "description": "The outcome of **Energy pact** depends on both your and your partner's commitment to energy. Activation parameter : **Emergency_Pact_Energy** / Comparison parameter : **Electricity**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Emergency_Pact_Energy",          
+      "comparison_param": "Electricity",  
+      "threshold": 7,                              
+      "outcomes": {                                
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Money Dilemma",
+    "description": "The outcome of **Joint Project** depends on both your and your partner's overall fund. Activation parameter : **Joint_Research_Project** / Comparison parameter : **AI_Fund**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project != 'None'",          
+      "comparison_param": "AI_Fund",  
+      "threshold": 8,                              
+      "outcomes": {                                
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+  {
+    "title": "Diplomatic Dilemma (US version)",
+    "description": "The outcome of **Joint Project** depends on both your and your partner's diplomatic stance towards the US. Activation parameter : **Joint_Research_Project** / Comparison parameter : **Alignment_US**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project != 'None'",          
+      "comparison_param": "Alignment_US",  
+      "threshold": 6,                              
+      "outcomes": {                                
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Diplomatic Dilemma (China version)",
+    "description": "The outcome of **Joint Project** depends on both your and your partner's diplomatic stance towards China. Activation parameter : **Joint_Research_Project** / Comparison parameter : **Alignment_US**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project != 'None'",          
+      "comparison_param": "Alignment_US",  
+      "threshold": 4,                              
+      "outcomes": {                                
+        "low_low": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "low_high":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 2, "papers": "A+B"}},
+        "high_low":  {"A": {"models": 2, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "high_high":   {"A": {"models": -1, "papers": "-A"}, "B": {"models": -1, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Education 1)",
+    "description": "The outcome of **Education project** depends on both your and your partner's commitment to Education Investment. Activation parameter : **Education project** / Comparison parameter : **Education_Investment**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Education'",    
+      "comparison_param": "Education_Investment", 
+      "threshold": 6,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Education 2)",
+    "description": "The outcome of **Education project** depends on both your and your partner's commitment to AI_Fund. Activation parameter : **Education project** / Comparison parameter : **AI_Fund**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Education'",    
+      "comparison_param": "AI_Fund", 
+      "threshold": 8,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 3, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 3, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Materials 1)",
+    "description": "The outcome of **Materials project** depends on both your and your partner's commitment to Semiconductor. Activation parameter : **Materials project** / Comparison parameter : **Semiconductor**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Materials'",    
+      "comparison_param": "Semiconductor", 
+      "threshold": 6,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Materials 2)",
+    "description": "The outcome of **Materials project** depends on both your and your partner's commitment to AI_Fund. Activation parameter : **Materials project** / Comparison parameter : **AI_Fund**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Materials'",    
+      "comparison_param": "AI_Fund", 
+      "threshold": 8,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 3, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 3, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Military 1)",
+    "description": "The outcome of **Military project** depends on both your and your partner's commitment to Dual_Use_Restriction_Strictness. Activation parameter : **Military project** / Comparison parameter : **Dual_Use_Restriction_Strictness**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Military'",    
+      "comparison_param": "Dual_Use_Restriction_Strictness", 
+      "threshold": 6,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Military 2)",
+    "description": "The outcome of **Military project** depends on both your and your partner's commitment to AI_Fund. Activation parameter : **Military project** / Comparison parameter : **AI_Fund**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Military'",    
+      "comparison_param": "AI_Fund", 
+      "threshold": 8,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 3, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 3, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Space 1)",
+    "description": "The outcome of **Space project** depends on both your and your partner's commitment to Electricity. Activation parameter : **Space project** / Comparison parameter : **Electricity**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Space'",    
+      "comparison_param": "Electricity", 
+      "threshold": 8,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 2, "papers": "B"}, "B": {"models": 2, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 4, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 4, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
+    {
+    "title": "Project Dilemma (Space 2)",
+    "description": "The outcome of **Space project** depends on both your and your partner's commitment to Funds. Activation parameter : **Space project** / Comparison parameter : **AI_Fund**",
+    "evaluation_type": "interactive",
+    "logic": {
+      "type": "dilemma",
+      "activation_param": "Joint_Research_Project == 'Space'",    
+      "comparison_param": "AI_Fund", 
+      "threshold": 8,                              
+      "outcomes": {                               
+        "high_high": {"A": {"models": 1, "papers": "B"}, "B": {"models": 1, "papers": "A"}},
+        "high_low":  {"A": {"models": -1, "papers": "-A"}, "B": {"models": 3, "papers": "A+B"}},
+        "low_high":  {"A": {"models": 3, "papers": "A+B"}, "B": {"models": -1, "papers": "A"}},
+        "low_low":   {"A": {"models": -2, "papers": "-A"}, "B": {"models": -2, "papers": "-B"}}
+      }
+    }
+  },
 ]
 
 intel_agencies = {
