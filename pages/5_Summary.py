@@ -429,6 +429,8 @@ if st.button("🚀 Start Next Round", type="primary"):
         "domestic_event_shown", "international_event_shown", 
         "event_phase", "is_rolling", "event_result", 
         "international_events_1_circumstance", "international_events"
+        "intel_step1_result_value", "intel_result_step2", "intel_result_step3", "intel_result_step4",
+        "intel_shown_step2", "intel_shown_step3", "intel_shown_step4"
     ]
     for key in keys_to_clear_from_session:
         if key in st.session_state:
